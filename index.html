@@ -662,7 +662,6 @@ function appendMsg(role, text, streaming = false) {
   return bubble;
 }
 
-// ─── Main send with STREAMING ───
 async function sendMessage() {
   const ta = document.getElementById('userInput');
   const sendBtn = document.getElementById('sendBtn');
@@ -680,20 +679,13 @@ async function sendMessage() {
   typingRow.classList.add('active');
   cw.scrollTop = cw.scrollHeight;
 
-  // Build tools array if search enabled
-  const tools = webSearchEnabled ? [{ type: 'web_search_20250305', name: 'web_search' }] : [];
-
-  // Show search indicator if needed
-  let searchIndicatorEl = null;
-
   try {
     const body = {
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1000,
-      stream: true,
+      stream: false,
       system: SYSTEM,
-      messages: history,
-      ...(tools.length > 0 ? { tools } : {})
+      messages: history
     };
 
     const res = await fetch('/.netlify/functions/chat', {
@@ -702,88 +694,28 @@ async function sendMessage() {
       body: JSON.stringify(body)
     });
 
-    if (!res.ok) throw new Error(`API error ${res.status}`);
-
     typingRow.classList.remove('active');
 
-    // Create streaming bubble
-    const bubble = appendMsg('anisa', '', true);
+    if (!res.ok) throw new Error(`API error ${res.status}`);
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let fullText = '';
-    let buffer = '';
-    let inputTokensUsed = false;
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'No response.';
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const data = line.slice(6).trim();
-        if (data === '[DONE]') continue;
-
-        try {
-          const evt = JSON.parse(data);
-
-          // Handle search tool use
-          if (evt.type === 'content_block_start' && evt.content_block?.type === 'tool_use') {
-            if (searchIndicatorEl) searchIndicatorEl.remove();
-            searchIndicatorEl = document.createElement('div');
-            searchIndicatorEl.className = 'search-indicator';
-            searchIndicatorEl.innerHTML = `<div class="search-spinner"></div><span>Searching the web…</span>`;
-            bubble.parentElement.parentElement.insertAdjacentElement('beforebegin', searchIndicatorEl);
-          }
-
-          if (evt.type === 'content_block_delta') {
-            if (evt.delta?.type === 'text_delta') {
-              fullText += evt.delta.text;
-              // Update bubble content + keep cursor at end
-              bubble.innerHTML = formatMd(fullText) + '<span class="cursor"></span>';
-              cw.scrollTop = cw.scrollHeight;
-            }
-          }
-
-          if (evt.type === 'message_stop') {
-            if (searchIndicatorEl) { searchIndicatorEl.remove(); searchIndicatorEl = null; }
-            bubble.innerHTML = formatMd(fullText);
-            history.push({ role: 'assistant', content: fullText });
-            speak(fullText);
-          }
-
-        } catch {}
-      }
-    }
-
-    // Fallback finalize
-    if (bubble.querySelector('.cursor')) {
-      bubble.innerHTML = formatMd(fullText);
-      if (!history.find(h => h.role === 'assistant' && h.content === fullText)) {
-        history.push({ role: 'assistant', content: fullText });
-        speak(fullText);
-      }
-    }
+    history.push({ role: 'assistant', content: reply });
+    appendMsg('anisa', reply);
+    speak(reply);
 
   } catch (err) {
     typingRow.classList.remove('active');
-    if (currentBubble) {
-      currentBubble.innerHTML = `Something went wrong — ${err.message}. Try again?`;
-    } else {
-      appendMsg('anisa', `Something went wrong — ${err.message}. Try again?`);
-    }
+    appendMsg('anisa', `Something went wrong — ${err.message}. Try again?`);
   } finally {
-    currentBubble = null;
     sendBtn.disabled = false;
     ta.disabled = false;
     ta.focus();
     cw.scrollTop = cw.scrollHeight;
   }
 }
+
 
 // Preload voices for speech synthesis
 if (window.speechSynthesis) {
