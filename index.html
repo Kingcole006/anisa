@@ -361,6 +361,7 @@
       <div class="status-pill"><div class="status-dot"></div><span id="statusText">Online</span></div>
       <button class="icon-btn" id="searchToggle" title="Web search" onclick="toggleSearch()">🔍</button>
       <button class="icon-btn" id="voiceToggle" title="Voice responses" onclick="toggleVoice()">🔈</button>
+      <button class="icon-btn" id="googleBtn" title="Connect Google" onclick="connectGoogle()">🔗</button>
       <button class="icon-btn" title="Clear chat" onclick="clearChat()">🗑</button>
     </div>
   </header>
@@ -420,6 +421,7 @@
         <div class="cap-pill on">Chat</div>
         <div class="cap-pill" id="searchPill">Search: Off</div>
         <div class="cap-pill" id="voicePill">Voice: Off</div>
+        <div class="cap-pill" id="googlePill">Google: Off</div>
       </div>
       <span>Enter · Shift+Enter new line</span>
     </div>
@@ -680,11 +682,15 @@ async function sendMessage() {
   cw.scrollTop = cw.scrollHeight;
 
   try {
+    // Enrich with Google data if relevant
+    const googleData = await enrichWithGoogle(input);
+    const enrichedSystem = googleData ? SYSTEM + googleData : SYSTEM;
+
     const body = {
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1000,
       stream: false,
-      system: SYSTEM,
+      system: enrichedSystem,
       messages: history
     };
 
@@ -716,6 +722,111 @@ async function sendMessage() {
   }
 }
 
+
+
+// ─── Google Integration ───
+let googleToken = null;
+
+// Check if returning from Google auth
+function checkGoogleCallback() {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('google') === 'connected') {
+    // Get token from cookie
+    const cookies = document.cookie.split(';');
+    const tokenCookie = cookies.find(c => c.trim().startsWith('anisa_google='));
+    if (tokenCookie) {
+      try {
+        const tokenData = JSON.parse(decodeURIComponent(tokenCookie.split('=')[1]));
+        googleToken = tokenData.access_token;
+        updateGoogleUI(true);
+        showToast('Google connected ✓ Calendar & Gmail ready');
+        history.replaceState({}, '', '/');
+      } catch(e) {}
+    }
+  }
+}
+
+function updateGoogleUI(connected) {
+  const btn = document.getElementById('googleBtn');
+  const pill = document.getElementById('googlePill');
+  if (connected) {
+    btn.classList.add('active');
+    btn.title = 'Google connected';
+    btn.textContent = '✓';
+    pill.textContent = 'Google: On';
+    pill.classList.add('on');
+  } else {
+    btn.classList.remove('active');
+    btn.title = 'Connect Google';
+    btn.textContent = '🔗';
+    pill.textContent = 'Google: Off';
+    pill.classList.remove('on');
+  }
+}
+
+function connectGoogle() {
+  if (googleToken) {
+    showToast('Google already connected!');
+    return;
+  }
+  window.location.href = '/.netlify/functions/google-auth';
+}
+
+async function getCalendar() {
+  if (!googleToken) return null;
+  try {
+    const res = await fetch('/.netlify/functions/google-calendar', {
+      headers: { Authorization: `Bearer ${googleToken}` }
+    });
+    return await res.json();
+  } catch { return null; }
+}
+
+async function getEmails() {
+  if (!googleToken) return null;
+  try {
+    const res = await fetch('/.netlify/functions/google-gmail', {
+      headers: { Authorization: `Bearer ${googleToken}` }
+    });
+    return await res.json();
+  } catch { return null; }
+}
+
+// Check for Google data in messages and fetch if needed
+async function enrichWithGoogle(userMessage) {
+  const msg = userMessage.toLowerCase();
+  let googleData = '';
+
+  if (googleToken && (msg.includes('calendar') || msg.includes('schedule') || msg.includes('meeting') || msg.includes('event') || msg.includes('appointment') || msg.includes('today') || msg.includes('tomorrow') || msg.includes('week'))) {
+    const cal = await getCalendar();
+    if (cal?.items?.length > 0) {
+      const events = cal.items.map(e => {
+        const start = e.start?.dateTime || e.start?.date || 'TBD';
+        return `- ${e.summary} at ${new Date(start).toLocaleString()}`;
+      }).join('\n');
+      googleData += `\n\n[CALENDAR - Next 7 days]\n${events}`;
+    } else if (cal?.items) {
+      googleData += '\n\n[CALENDAR] No upcoming events found.';
+    }
+  }
+
+  if (googleToken && (msg.includes('email') || msg.includes('gmail') || msg.includes('inbox') || msg.includes('unread') || msg.includes('mail'))) {
+    const mail = await getEmails();
+    if (mail?.emails?.length > 0) {
+      const emails = mail.emails.map(e =>
+        `- From: ${e.from}\n  Subject: ${e.subject}\n  Preview: ${e.snippet}`
+      ).join('\n');
+      googleData += `\n\n[GMAIL - Unread emails]\n${emails}`;
+    } else {
+      googleData += '\n\n[GMAIL] No unread emails found.';
+    }
+  }
+
+  return googleData;
+}
+
+// Initialize Google check on load
+checkGoogleCallback();
 
 // Preload voices for speech synthesis
 if (window.speechSynthesis) {
