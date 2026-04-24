@@ -6,3 +6,8 @@
   for = "/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
+
+[[redirects]]
+  from = "/auth/callback"
+  to = "/.netlify/functions/google-callback"
+  status = 200
