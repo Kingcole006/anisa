@@ -47,7 +47,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 302,
       headers: {
-        'Set-Cookie': `anisa_google=${tokenData}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`,
+        'Set-Cookie': `anisa_google=${tokenData}; Path=/; Secure; SameSite=Lax; Max-Age=2592000`,
         'Location': '/?google=connected'
       },
       body: ''
