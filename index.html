@@ -438,6 +438,7 @@ let isSpeaking = false;
 let recognition = null;
 let deferredInstallPrompt = null;
 let currentBubble = null;
+let pendingAction = null; // Stores pending calendar/email action
 
 // ─── System prompt ───
 const SYSTEM = `You are Anisa, a personal AI created specifically for Cole.
@@ -696,6 +697,71 @@ async function sendMessage() {
   cw.scrollTop = cw.scrollHeight;
 
   try {
+    // Check if this is a confirmation of a pending action
+    const confirmWords = [
+      'yes', 'yeah', 'yep', 'yup', 'sure', 'go ahead', 'do it', 'confirm', 'confirmed',
+      'ok', 'okay', 'send it', 'create it', 'absolutely', 'definitely', 'of course',
+      'please do', 'sounds good', 'looks good', 'that works', 'perfect', 'great',
+      'do that', 'go for it', 'let's do it', 'lets do it', 'affirmative', 'correct',
+      'right', 'exactly', 'indeed', 'please', 'yes please', 'for sure', 'totally'
+    ];
+    const cancelWords = [
+      'no', 'nope', 'nah', 'cancel', 'stop', 'dont', "don't", 'nevermind', 'never mind',
+      'forget it', 'forget that', 'skip it', 'skip', 'abort', 'negative', 'not now',
+      'actually no', 'on second thought', 'hold on', 'wait', 'discard', 'reject',
+      'no thanks', 'no thank you', 'pass', 'declined', 'decline'
+    ];
+    const msgLower = input.toLowerCase().trim();
+    const isConfirm = pendingAction && confirmWords.some(w => msgLower === w || msgLower.startsWith(w + ' ') || msgLower.endsWith(' ' + w));
+    const isCancel = pendingAction && cancelWords.some(w => msgLower === w || msgLower.startsWith(w + ' ') || msgLower.endsWith(' ' + w));
+
+    if (pendingAction && isConfirm) {
+      typingRow.classList.remove('active');
+      const action = pendingAction;
+      pendingAction = null;
+
+      let resultMsg = '';
+      try {
+        if (action.type === 'calendar') {
+          const result = await createCalendarEvent(action.summary, action.start, action.end, action.description || '');
+          if (result.id) {
+            resultMsg = `Done — "${action.summary}" is on your calendar for ${new Date(action.start).toLocaleString('en-US', {weekday:'long', month:'long', day:'numeric', hour:'numeric', minute:'2-digit'})}.`;
+          } else {
+            resultMsg = `Something went wrong creating the event: ${JSON.stringify(result)}`;
+          }
+        } else if (action.type === 'email') {
+          const result = await draftEmail(action.to, action.subject, action.body);
+          if (result.success) {
+            resultMsg = `Email drafted and saved. Draft ID: ${result.draftId}. Want me to send it now?`;
+            pendingAction = { type: 'send_draft', draftId: result.draftId };
+          } else if (action.send) {
+            const result2 = await sendEmail(action.to, action.subject, action.body);
+            resultMsg = result2.success ? `Email sent to ${action.to}.` : `Error: ${result2.error}`;
+          } else {
+            resultMsg = `Error saving draft: ${result.error}`;
+          }
+        }
+      } catch(e) {
+        resultMsg = `Error executing action: ${e.message}`;
+      }
+
+      history.push({ role: 'assistant', content: resultMsg });
+      appendMsg('anisa', resultMsg);
+      speak(resultMsg);
+      sendBtn.disabled = false; ta.disabled = false; ta.focus();
+      return;
+    }
+
+    if (pendingAction && isCancel) {
+      pendingAction = null;
+      typingRow.classList.remove('active');
+      const msg = "Got it — action cancelled.";
+      history.push({ role: 'assistant', content: msg });
+      appendMsg('anisa', msg);
+      sendBtn.disabled = false; ta.disabled = false; ta.focus();
+      return;
+    }
+
     // Enrich with Google data if relevant
     const googleData = await enrichWithGoogle(input);
     const enrichedSystem = googleData ? SYSTEM + googleData : SYSTEM;
@@ -724,6 +790,9 @@ async function sendMessage() {
     history.push({ role: 'assistant', content: reply });
     appendMsg('anisa', reply);
     speak(reply);
+
+    // Parse reply for pending calendar/email actions
+    await parseForPendingAction(input, reply);
 
   } catch (err) {
     typingRow.classList.remove('active');
@@ -892,6 +961,71 @@ function confirmAction(type) {
 function cancelAction() {
   document.getElementById('toast').classList.remove('show');
   showToast('Action cancelled');
+}
+
+// ─── Parse Anisa's reply for actionable intents ───
+async function parseForPendingAction(userMsg, anisaReply) {
+  const reply = anisaReply.toLowerCase();
+  const msg = userMsg.toLowerCase();
+
+  // Calendar creation detection
+  if ((reply.includes('should i go ahead and create') || reply.includes('shall i create') || reply.includes('want me to create')) && reply.includes('title:')) {
+    // Extract event details from reply
+    const titleMatch = anisaReply.match(/title[:\s]+([^
+\-]+)/i);
+    const dateMatch = anisaReply.match(/date[:\s]+([^
+\-]+)/i);
+    const timeMatch = anisaReply.match(/time[:\s]+([^
+\-]+)/i);
+
+    if (titleMatch) {
+      const title = titleMatch[1].trim().replace(/\*\*/g, '');
+      const dateStr = dateMatch ? dateMatch[1].trim() : '';
+      const timeStr = timeMatch ? timeMatch[1].trim() : '';
+
+      // Parse date/time into ISO format
+      let startDate, endDate;
+      try {
+        const combined = `${dateStr} ${timeStr.split(/[-–]/)[0].trim()}`;
+        startDate = new Date(combined);
+        const endPart = timeStr.split(/[-–]/)[1]?.trim();
+        endDate = endPart ? new Date(`${dateStr} ${endPart}`) : new Date(startDate.getTime() + 60*60*1000);
+        
+        if (!isNaN(startDate.getTime())) {
+          pendingAction = {
+            type: 'calendar',
+            summary: title,
+            start: startDate.toISOString(),
+            end: endDate.toISOString(),
+            description: ''
+          };
+          showToast('Say "yes" to confirm or "no" to cancel', 4000);
+        }
+      } catch(e) { console.log('Date parse error:', e); }
+    }
+  }
+
+  // Email draft detection
+  if (reply.includes('should i go ahead and send') || reply.includes('want me to send this') || reply.includes('shall i send')) {
+    const toMatch = anisaReply.match(/to[:\s]+([^
+]+)/i);
+    const subjectMatch = anisaReply.match(/subject[:\s]+([^
+]+)/i);
+    const bodyMatch = anisaReply.match(/body[:\s]+([\s\S]+?)(?=
+
+|should i|shall i|want me)/i);
+
+    if (toMatch && subjectMatch) {
+      pendingAction = {
+        type: 'email',
+        to: toMatch[1].trim(),
+        subject: subjectMatch[1].trim(),
+        body: bodyMatch ? bodyMatch[1].trim() : '',
+        send: true
+      };
+      showToast('Say "yes" to send or "no" to cancel', 4000);
+    }
+  }
 }
 
 // Check for Google data in messages and fetch if needed
