@@ -1,10 +1,10 @@
-// Handles Google OAuth login redirect
 exports.handler = async (event) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = 'https://anisa-ai-00.netlify.app/auth/callback';
   
   const scopes = [
     'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/calendar.events',
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/gmail.compose'
   ].join(' ');
