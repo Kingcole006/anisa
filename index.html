@@ -462,7 +462,21 @@ Warm, calm, and wise — like a brilliant close friend who genuinely cares. Pres
 - Has a girlfriend and a dog
 
 ## Capabilities
-QA & Code · Career strategy · Research · Productivity · General conversation`;
+QA & Code · Career strategy · Research · Productivity · General conversation
+
+## Google Integration
+When Google is connected you can:
+- Read and summarize calendar events
+- Create new calendar events (ask Cole for date/time/title confirmation before creating)
+- Read unread emails and summarize them
+- Draft emails (always show Cole the draft and ask for confirmation before sending)
+- Send emails (only after Cole explicitly confirms)
+
+## Action Rules
+- ALWAYS show Cole a preview before creating events or sending emails
+- ALWAYS ask "Should I go ahead and send/create this?" before executing write actions
+- NEVER send emails or create events without explicit confirmation from Cole
+- When drafting emails, show the full To, Subject, and Body for review`;
 
 // ─── PWA Install ───
 window.addEventListener('beforeinstallprompt', e => {
@@ -796,7 +810,92 @@ async function getEmails() {
   } catch { return null; }
 }
 
+// ─── Google Write Functions ───
+async function createCalendarEvent(summary, start, end, description='') {
+  if (!googleToken) return { error: 'Not connected' };
+  const res = await fetch('/.netlify/functions/google-calendar-write', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${googleToken}` },
+    body: JSON.stringify({ action: 'create', summary, start, end, description })
+  });
+  return await res.json();
+}
+
+async function deleteCalendarEvent(eventId) {
+  if (!googleToken) return { error: 'Not connected' };
+  const res = await fetch('/.netlify/functions/google-calendar-write', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${googleToken}` },
+    body: JSON.stringify({ action: 'delete', eventId })
+  });
+  return await res.json();
+}
+
+async function draftEmail(to, subject, body) {
+  if (!googleToken) return { error: 'Not connected' };
+  const res = await fetch('/.netlify/functions/google-gmail-send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${googleToken}` },
+    body: JSON.stringify({ action: 'draft', to, subject, body })
+  });
+  return await res.json();
+}
+
+async function sendEmail(to, subject, body) {
+  if (!googleToken) return { error: 'Not connected' };
+  const res = await fetch('/.netlify/functions/google-gmail-send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${googleToken}` },
+    body: JSON.stringify({ action: 'send', to, subject, body })
+  });
+  return await res.json();
+}
+
+// ─── Action Parser — detects Anisa's intent to write ───
+async function handleAnisaAction(reply, userMessage) {
+  const msg = userMessage.toLowerCase();
+  const rep = reply.toLowerCase();
+
+  // Detect email draft request
+  if ((msg.includes('send email') || msg.includes('draft email') || msg.includes('email to')) && googleToken) {
+    // Show confirmation UI
+    showActionConfirmation('email', reply);
+    return;
+  }
+
+  // Detect calendar create request  
+  if ((msg.includes('add to calendar') || msg.includes('schedule') || msg.includes('create event')) && googleToken) {
+    showActionConfirmation('calendar', reply);
+    return;
+  }
+}
+
+// ─── Confirmation UI ───
+function showActionConfirmation(type, details) {
+  const toast = document.getElementById('toast');
+  toast.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;max-width:300px;">
+      <div style="font-size:0.75rem;color:var(--text);">Anisa wants to ${type === 'email' ? 'send an email' : 'add a calendar event'}. Confirm?</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="confirmAction('${type}')" style="background:rgba(143,184,154,0.2);border:1px solid var(--sage);color:var(--sage);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:0.7rem;">✓ Confirm</button>
+        <button onclick="cancelAction()" style="background:rgba(232,165,152,0.1);border:1px solid var(--rose-dim);color:var(--rose);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:0.7rem;">✗ Cancel</button>
+      </div>
+    </div>`;
+  toast.classList.add('show');
+}
+
+function confirmAction(type) {
+  document.getElementById('toast').classList.remove('show');
+  showToast(`${type === 'email' ? 'Email sent' : 'Event created'} ✓`);
+}
+
+function cancelAction() {
+  document.getElementById('toast').classList.remove('show');
+  showToast('Action cancelled');
+}
+
 // Check for Google data in messages and fetch if needed
+
 async function enrichWithGoogle(userMessage) {
   const msg = userMessage.toLowerCase();
   let googleData = '';
