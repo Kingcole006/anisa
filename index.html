@@ -966,64 +966,51 @@ function cancelAction() {
 // ─── Parse Anisa's reply for actionable intents ───
 async function parseForPendingAction(userMsg, anisaReply) {
   const reply = anisaReply.toLowerCase();
-  const msg = userMsg.toLowerCase();
 
-  // Calendar creation detection
-  if ((reply.includes('should i go ahead and create') || reply.includes('shall i create') || reply.includes('want me to create')) && reply.includes('title:')) {
-    // Extract event details from reply
-    const titleMatch = anisaReply.match(/title[:\s]+([^
-\-]+)/i);
-    const dateMatch = anisaReply.match(/date[:\s]+([^
-\-]+)/i);
-    const timeMatch = anisaReply.match(/time[:\s]+([^
-\-]+)/i);
+  const wantsCalendar = reply.includes('should i go ahead and create') ||
+    reply.includes('shall i create') ||
+    reply.includes('want me to create') ||
+    reply.includes('go ahead and create this');
 
-    if (titleMatch) {
-      const title = titleMatch[1].trim().replace(/\*\*/g, '');
-      const dateStr = dateMatch ? dateMatch[1].trim() : '';
-      const timeStr = timeMatch ? timeMatch[1].trim() : '';
-
-      // Parse date/time into ISO format
-      let startDate, endDate;
+  if (wantsCalendar && reply.includes('title')) {
+    const replyLines = anisaReply.split('\n');
+    let title = '', dateStr = '', timeStr = '';
+    for (const line of replyLines) {
+      const l = line.toLowerCase();
+      if (l.includes('title') && line.includes(':')) title = line.split(':').slice(1).join(':').trim().replace(/[*\-]/g, '').trim();
+      if (l.includes('date') && line.includes(':')) dateStr = line.split(':').slice(1).join(':').trim().replace(/[*\-]/g, '').trim();
+      if (l.includes('time') && line.includes(':')) timeStr = line.split(':').slice(1).join(':').trim().replace(/[*\-]/g, '').trim();
+    }
+    if (title) {
       try {
-        const combined = `${dateStr} ${timeStr.split(/[-–]/)[0].trim()}`;
-        startDate = new Date(combined);
-        const endPart = timeStr.split(/[-–]/)[1]?.trim();
-        endDate = endPart ? new Date(`${dateStr} ${endPart}`) : new Date(startDate.getTime() + 60*60*1000);
-        
+        const timeParts = timeStr.split(/[-to]+/);
+        const startDate = new Date(dateStr + ' ' + (timeParts[0] || '').trim());
+        const endDate = timeParts[1] ? new Date(dateStr + ' ' + timeParts[1].trim()) : new Date(startDate.getTime() + 3600000);
         if (!isNaN(startDate.getTime())) {
-          pendingAction = {
-            type: 'calendar',
-            summary: title,
-            start: startDate.toISOString(),
-            end: endDate.toISOString(),
-            description: ''
-          };
-          showToast('Say "yes" to confirm or "no" to cancel', 4000);
+          pendingAction = { type: 'calendar', summary: title, start: startDate.toISOString(), end: endDate.toISOString(), description: '' };
+          showToast('Say yes to confirm or no to cancel', 4000);
         }
       } catch(e) { console.log('Date parse error:', e); }
     }
   }
 
-  // Email draft detection
-  if (reply.includes('should i go ahead and send') || reply.includes('want me to send this') || reply.includes('shall i send')) {
-    const toMatch = anisaReply.match(/to[:\s]+([^
-]+)/i);
-    const subjectMatch = anisaReply.match(/subject[:\s]+([^
-]+)/i);
-    const bodyMatch = anisaReply.match(/body[:\s]+([\s\S]+?)(?=
+  const wantsEmail = reply.includes('should i go ahead and send') ||
+    reply.includes('want me to send this') ||
+    reply.includes('shall i send') ||
+    reply.includes('go ahead and send');
 
-|should i|shall i|want me)/i);
-
-    if (toMatch && subjectMatch) {
-      pendingAction = {
-        type: 'email',
-        to: toMatch[1].trim(),
-        subject: subjectMatch[1].trim(),
-        body: bodyMatch ? bodyMatch[1].trim() : '',
-        send: true
-      };
-      showToast('Say "yes" to send or "no" to cancel', 4000);
+  if (wantsEmail) {
+    const replyLines = anisaReply.split('\n');
+    let to = '', subject = '', body = '';
+    for (const line of replyLines) {
+      const l = line.toLowerCase();
+      if (l.includes('to:')) to = line.split(':').slice(1).join(':').trim();
+      if (l.includes('subject:')) subject = line.split(':').slice(1).join(':').trim();
+      if (l.includes('body:')) body = line.split(':').slice(1).join(':').trim();
+    }
+    if (to && subject) {
+      pendingAction = { type: 'email', to, subject, body, send: true };
+      showToast('Say yes to send or no to cancel', 4000);
     }
   }
 }
