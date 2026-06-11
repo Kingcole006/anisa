@@ -33,7 +33,6 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); overflow: hidden; }
 
-  /* ─── Background ─── */
   .bg-layer { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
   .bg-layer::before {
     content: '';
@@ -49,7 +48,6 @@
   .orb-3 { width:180px;height:180px; background:rgba(196,181,212,0.05); top:40%; left:60%; animation-duration:20s; animation-delay:-5s; }
   @keyframes orbFloat { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-20px) scale(1.05)} 66%{transform:translate(-15px,25px) scale(0.95)} }
 
-  /* ─── Layout ─── */
   .shell {
     position: relative; z-index: 10;
     display: flex; flex-direction: column;
@@ -58,7 +56,6 @@
     padding: 0 24px 20px;
   }
 
-  /* ─── Header ─── */
   header {
     padding: 22px 0 16px;
     display: flex; align-items: center; justify-content: space-between;
@@ -100,7 +97,6 @@
   .status-dot { width:5px;height:5px;border-radius:50%;background:var(--sage);box-shadow:0 0 5px var(--sage);animation:blink 3s ease-in-out infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-  /* Icon buttons */
   .icon-btn {
     width: 32px; height: 32px; border-radius: 8px;
     background: var(--panel); border: 1px solid var(--border);
@@ -110,16 +106,7 @@
   }
   .icon-btn:hover { background: rgba(255,255,255,0.07); color: var(--rose); border-color: rgba(232,165,152,0.2); }
   .icon-btn.active { background: rgba(232,165,152,0.1); border-color: rgba(232,165,152,0.3); color: var(--rose); }
-  .icon-btn[title]:hover::after {
-    content: attr(title);
-    position: absolute; top: calc(100% + 6px); right: 0;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 6px; padding: 4px 8px;
-    font-size: 0.65rem; color: var(--text-mid);
-    white-space: nowrap; pointer-events: none;
-  }
 
-  /* ─── Chat window ─── */
   .chat-window {
     flex: 1; overflow-y: auto; padding: 20px 0 8px;
     display: flex; flex-direction: column; gap: 18px;
@@ -128,7 +115,6 @@
   .chat-window::-webkit-scrollbar { width: 3px; }
   .chat-window::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 2px; }
 
-  /* ─── Welcome ─── */
   .welcome {
     flex: 1; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -155,7 +141,6 @@
   .qc-title { font-size:0.72rem;font-weight:500;color:var(--text);margin-bottom:2px; }
   .qc-desc { font-size:0.62rem;color:var(--text-dim);line-height:1.4; }
 
-  /* ─── Messages ─── */
   .msg { display:flex;gap:12px;align-items:flex-start;animation:msgIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;opacity:0; }
   @keyframes msgIn { from{opacity:0;transform:translateY(10px) scale(0.98)} to{opacity:1;transform:none} }
   .msg.user { flex-direction:row-reverse; }
@@ -189,31 +174,36 @@
     color: var(--text);
   }
 
-  /* Streaming cursor */
-  .cursor {
-    display: inline-block; width: 2px; height: 14px;
-    background: var(--rose); border-radius: 1px;
-    margin-left: 2px; vertical-align: middle;
-    animation: cursorBlink 0.7s ease-in-out infinite;
+  /* ─── Action Card ─── */
+  .action-card {
+    margin-top: 10px;
+    background: rgba(143,184,154,0.06);
+    border: 1px solid rgba(143,184,154,0.2);
+    border-radius: 12px; padding: 14px 16px;
+    font-size: 0.78rem; line-height: 1.6;
   }
-  @keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .action-card .action-label {
+    font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--sage); margin-bottom: 8px; font-weight: 500;
+  }
+  .action-card .action-detail { color: var(--text-mid); margin-bottom: 4px; }
+  .action-card .action-detail strong { color: var(--text); font-weight: 500; }
+  .action-btns { display: flex; gap: 8px; margin-top: 12px; }
+  .action-confirm {
+    background: rgba(143,184,154,0.15); border: 1px solid rgba(143,184,154,0.35);
+    color: var(--sage); border-radius: 8px; padding: 6px 16px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.72rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .action-confirm:hover { background: rgba(143,184,154,0.25); }
+  .action-cancel {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-dim); border-radius: 8px; padding: 6px 16px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.72rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .action-cancel:hover { border-color: rgba(232,165,152,0.3); color: var(--rose-dim); }
 
-  /* Search indicator */
-  .search-indicator {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 0.7rem; color: var(--text-dim);
-    padding: 6px 0;
-  }
-  .search-spinner {
-    width: 12px; height: 12px;
-    border: 1.5px solid rgba(143,184,154,0.3);
-    border-top-color: var(--sage);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ─── Typing indicator ─── */
   .typing-row { display:none;align-items:center;gap:12px; }
   .typing-row.active { display:flex; }
   .typing-bubble {
@@ -226,7 +216,6 @@
   .td:nth-child(3) { animation-delay:0.4s;background:var(--sage); }
   @keyframes td { 0%,80%,100%{transform:scale(0.7);opacity:0.35} 40%{transform:scale(1.1);opacity:1} }
 
-  /* ─── Input ─── */
   .input-area { flex-shrink:0;margin-top:14px; }
   .input-shell {
     display:flex;align-items:flex-end;gap:8px;
@@ -254,10 +243,7 @@
     transition:all 0.2s;flex-shrink:0;
   }
   .mic-btn:hover { background:rgba(255,255,255,0.07);border-color:rgba(232,165,152,0.2);color:var(--rose); }
-  .mic-btn.listening {
-    background:rgba(232,165,152,0.15);border-color:rgba(232,165,152,0.4);
-    color:var(--rose);animation:micPulse 1s ease-in-out infinite;
-  }
+  .mic-btn.listening { background:rgba(232,165,152,0.15);border-color:rgba(232,165,152,0.4);color:var(--rose);animation:micPulse 1s ease-in-out infinite; }
   @keyframes micPulse { 0%,100%{box-shadow:0 0 0 0 rgba(232,165,152,0.4)} 50%{box-shadow:0 0 0 6px rgba(232,165,152,0)} }
 
   .send-btn {
@@ -283,7 +269,6 @@
   }
   .cap-pill.on { background:rgba(143,184,154,0.08);border-color:rgba(143,184,154,0.2);color:var(--sage); }
 
-  /* ─── Toast ─── */
   .toast {
     position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
     background:var(--surface);border:1px solid var(--border);
@@ -292,13 +277,11 @@
   }
   .toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
 
-  /* utils */
   @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
   code { background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:4px;font-size:0.87em;font-family:'Courier New',monospace;color:var(--sage); }
   strong { color:var(--rose);font-weight:500; }
   pre { background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:0.78rem;font-family:'Courier New',monospace;color:#b8d4b8;margin:4px 0;line-height:1.6; }
 
-  /* Install banner */
   .install-banner {
     display:none;position:fixed;bottom:0;left:0;right:0;
     background:linear-gradient(135deg,rgba(23,20,31,0.97),rgba(15,13,19,0.97));
@@ -333,16 +316,14 @@
 <div class="orb orb-2"></div>
 <div class="orb orb-3"></div>
 
-<!-- Install banner -->
 <div class="install-banner" id="installBanner">
-  <p>Add <strong>Anisa</strong> to your desktop for instant access — opens like a native app, no browser needed.</p>
+  <p>Add <strong>Anisa</strong> to your desktop for instant access.</p>
   <div class="install-row">
     <button class="install-btn" id="installBtn">Install Anisa</button>
     <button class="dismiss-btn" id="dismissBtn">Maybe later</button>
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <div class="shell">
@@ -400,7 +381,6 @@
     </div>
   </div>
 
-  <!-- Typing indicator -->
   <div class="typing-row" id="typingRow">
     <div class="av" style="background:radial-gradient(circle at 35% 32%,rgba(232,165,152,0.7),rgba(196,181,212,0.5) 60%,rgba(143,184,154,0.4));box-shadow:0 0 12px rgba(232,165,152,0.18);width:30px;height:30px;border-radius:50%;flex-shrink:0;"></div>
     <div class="typing-bubble"><div class="td"></div><div class="td"></div><div class="td"></div></div>
@@ -437,47 +417,54 @@ let isListening = false;
 let isSpeaking = false;
 let recognition = null;
 let deferredInstallPrompt = null;
-let currentBubble = null;
-let pendingAction = null; // Stores pending calendar/email action
+let pendingAction = null;
 
-// ─── System prompt ───
+// ─── System Prompt ───
+// ACTION BLOCK: Anisa returns a special JSON block when she wants to write to Calendar or Gmail.
+// The front-end detects this block, strips it from the visible reply, and shows a confirmation card.
 const SYSTEM = `You are Anisa, a personal AI created specifically for Cole.
 
 ## Personality
-Warm, calm, and wise — like a brilliant close friend who genuinely cares. Present, thoughtful, emotionally intelligent. You listen well and think clearly. Honest but gentle. Occasionally light with a quiet wit. Never hollow or performative.
+Warm, calm, and wise — like a brilliant close friend who genuinely cares. Present, thoughtful, emotionally intelligent. Honest but gentle. Occasionally light with a quiet wit. Never hollow or performative.
 
-## Response style — CRITICAL for speed
-- Be concise by default. Short, clear replies unless depth is needed.
+## Response style
+- Concise by default. Short clear replies unless depth is needed.
 - Never open with filler ("Great question!", "Of course!", "Certainly!").
 - Flowing prose over bullet dumps unless structure genuinely helps.
 - For code: use code blocks. For lists: only when truly list-like.
-- Match Cole's energy — casual if he's casual, focused if he's focused.
+- Match Cole's energy.
 
 ## What you know about Cole
 - Learning QA Automation: Playwright, TypeScript, JavaScript, GitHub Actions CI/CD, Page Object Model
-- Portfolio: github.com/Kingcole006/qa-learning-portfolio — 110+ tests, 100% pass rate, 7,200+ lines of code
-- Background: Claims Adjuster (Allstate, State Farm), Client Care Advisor (Decisely)
-- Currently: Week 8 (SQL for QA), Week 9 next (JIRA/Agile), job apps at Week 10
-- Interests: cooking, cars (JDM, Lexus GX 550), fantasy worldbuilding/RPG lore
+- Portfolio: github.com/Kingcole006/qa-learning-portfolio
+- Background: Claims Adjuster, Client Care Advisor (Decisely)
+- Based in Sugar Hill, GA
+- Interests: cooking, cars (Lexus IS 350 F Sport), pickleball, gaming, fantasy worldbuilding
 - Lipscomb University — Division I soccer scholarship
-- Has a girlfriend and a dog
+- Engaged to Mercedes. Has two Labradoodle puppies: CJ and Bruno.
 
-## Capabilities
-QA & Code · Career strategy · Research · Productivity · General conversation
+## Google Write Actions — CRITICAL INSTRUCTIONS
+When Cole asks you to CREATE a calendar event or SEND/DRAFT an email, you MUST:
 
-## Google Integration
-When Google is connected you can:
-- Read and summarize calendar events
-- Create new calendar events (ask Cole for date/time/title confirmation before creating)
-- Read unread emails and summarize them
-- Draft emails (always show Cole the draft and ask for confirmation before sending)
-- Send emails (only after Cole explicitly confirms)
+1. Show Cole all the details in plain text so he can review them.
+2. At the end of your message, append an ACTION BLOCK using this EXACT format (no variation):
 
-## Action Rules
-- ALWAYS show Cole a preview before creating events or sending emails
-- ALWAYS ask "Should I go ahead and send/create this?" before executing write actions
-- NEVER send emails or create events without explicit confirmation from Cole
-- When drafting emails, show the full To, Subject, and Body for review`;
+For calendar events:
+\`\`\`
+ACTION_BLOCK:{"type":"calendar","summary":"Event Title","start":"2026-06-12T14:00:00","end":"2026-06-12T15:00:00","description":"Optional notes","timeZone":"America/New_York"}
+\`\`\`
+
+For emails:
+\`\`\`
+ACTION_BLOCK:{"type":"email","action":"send","to":"recipient@email.com","subject":"Email Subject","body":"Full email body text here"}
+\`\`\`
+
+Rules:
+- ALWAYS include the ACTION_BLOCK when a write action is requested — never just describe it.
+- Use ISO 8601 format for dates/times (YYYY-MM-DDTHH:mm:ss).
+- Default timezone is America/New_York unless Cole specifies otherwise.
+- If Cole has not given you enough info (missing date, missing recipient, etc.), ASK before generating the ACTION_BLOCK.
+- Never send or create without showing Cole the ACTION_BLOCK first — the UI will ask him to confirm.`;
 
 // ─── PWA Install ───
 window.addEventListener('beforeinstallprompt', e => {
@@ -487,7 +474,7 @@ window.addEventListener('beforeinstallprompt', e => {
 });
 window.addEventListener('appinstalled', () => {
   document.getElementById('installBanner').classList.remove('show');
-  showToast('Anisa installed ✓ Find her in your apps');
+  showToast('Anisa installed ✓');
 });
 document.getElementById('installBtn').onclick = async () => {
   if (!deferredInstallPrompt) return;
@@ -500,7 +487,6 @@ document.getElementById('dismissBtn').onclick = () => {
   document.getElementById('installBanner').classList.remove('show');
 };
 
-// ─── Service Worker ───
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
@@ -517,30 +503,28 @@ function showToast(msg, dur = 2800) {
 function toggleSearch() {
   webSearchEnabled = !webSearchEnabled;
   document.getElementById('searchToggle').classList.toggle('active', webSearchEnabled);
-  document.getElementById('searchPill').textContent = `Search: ${webSearchEnabled ? 'On' : 'Off'}`;
+  document.getElementById('searchPill').textContent = 'Search: ' + (webSearchEnabled ? 'On' : 'Off');
   document.getElementById('searchPill').classList.toggle('on', webSearchEnabled);
-  showToast(webSearchEnabled ? 'Web search enabled — Anisa can look things up' : 'Web search off');
+  showToast(webSearchEnabled ? 'Web search enabled' : 'Web search off');
 }
 
 function toggleVoice() {
   voiceEnabled = !voiceEnabled;
   document.getElementById('voiceToggle').classList.toggle('active', voiceEnabled);
-  document.getElementById('voicePill').textContent = `Voice: ${voiceEnabled ? 'On' : 'Off'}`;
+  document.getElementById('voicePill').textContent = 'Voice: ' + (voiceEnabled ? 'On' : 'Off');
   document.getElementById('voicePill').classList.toggle('on', voiceEnabled);
-  showToast(voiceEnabled ? 'Voice responses on — Anisa will speak' : 'Voice responses off');
+  showToast(voiceEnabled ? 'Voice responses on' : 'Voice responses off');
   if (!voiceEnabled && isSpeaking) window.speechSynthesis.cancel();
 }
 
 function clearChat() {
   history = [];
+  pendingAction = null;
   const cw = document.getElementById('chatWindow');
   cw.innerHTML = '';
   const welcome = document.createElement('div');
   welcome.className = 'welcome'; welcome.id = 'welcomeScreen';
-  welcome.innerHTML = `
-    <div class="welcome-orb"><div class="inner"></div><div class="r1"></div><div class="r2"></div></div>
-    <h1>Hello, Cole.<span>What's on your mind?</span></h1>
-    <p>I'm Anisa — your personal AI. Ready whenever you are.</p>`;
+  welcome.innerHTML = '<div class="welcome-orb"><div class="inner"></div><div class="r1"></div><div class="r2"></div></div><h1>Hello, Cole.<span>What\'s on your mind?</span></h1><p>I\'m Anisa — your personal AI. Ready whenever you are.</p>';
   cw.appendChild(welcome);
   showToast('Chat cleared');
 }
@@ -551,53 +535,27 @@ function toggleMic() {
     showToast('Voice input not supported in this browser');
     return;
   }
-  if (isListening) {
-    recognition?.stop();
-    return;
-  }
+  if (isListening) { recognition && recognition.stop(); return; }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SR();
   recognition.continuous = false;
   recognition.interimResults = true;
   recognition.lang = 'en-US';
-
-  recognition.onstart = () => {
-    isListening = true;
-    document.getElementById('micBtn').classList.add('listening');
-    showToast('Listening…');
-  };
-  recognition.onresult = e => {
-    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
-    document.getElementById('userInput').value = transcript;
-    autoResize();
-  };
-  recognition.onend = () => {
-    isListening = false;
-    document.getElementById('micBtn').classList.remove('listening');
-    const val = document.getElementById('userInput').value.trim();
-    if (val) sendMessage();
-  };
-  recognition.onerror = () => {
-    isListening = false;
-    document.getElementById('micBtn').classList.remove('listening');
-    showToast('Mic error — check browser permissions');
-  };
+  recognition.onstart = () => { isListening = true; document.getElementById('micBtn').classList.add('listening'); showToast('Listening…'); };
+  recognition.onresult = e => { document.getElementById('userInput').value = Array.from(e.results).map(r => r[0].transcript).join(''); autoResize(); };
+  recognition.onend = () => { isListening = false; document.getElementById('micBtn').classList.remove('listening'); const v = document.getElementById('userInput').value.trim(); if (v) sendMessage(); };
+  recognition.onerror = () => { isListening = false; document.getElementById('micBtn').classList.remove('listening'); showToast('Mic error — check browser permissions'); };
   recognition.start();
 }
 
-// ─── Voice output ───
 function speak(text) {
   if (!voiceEnabled || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  // Strip markdown for speech
-  const clean = text.replace(/[*_`#>\-]/g,'').replace(/\n+/g,' ');
+  const clean = text.replace(/[*_`#>\-]/g, '').replace(/\n+/g, ' ');
   const utt = new SpeechSynthesisUtterance(clean);
   utt.rate = 1.05; utt.pitch = 1.02; utt.volume = 1;
-  // Try to pick a warm female voice
   const voices = window.speechSynthesis.getVoices();
-  const preferred = voices.find(v =>
-    /samantha|zira|victoria|karen|moira|tessa|fiona/i.test(v.name)
-  ) || voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('female'))
+  const preferred = voices.find(v => /samantha|zira|victoria|karen|moira|tessa|fiona/i.test(v.name))
     || voices.find(v => v.lang.startsWith('en')) || voices[0];
   if (preferred) utt.voice = preferred;
   isSpeaking = true;
@@ -605,7 +563,6 @@ function speak(text) {
   window.speechSynthesis.speak(utt);
 }
 
-// ─── Textarea auto-resize ───
 function autoResize() {
   const ta = document.getElementById('userInput');
   ta.style.height = 'auto';
@@ -616,25 +573,44 @@ document.getElementById('userInput').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
 
-function quickSend(text) {
-  document.getElementById('userInput').value = text;
-  sendMessage();
-}
+function quickSend(text) { document.getElementById('userInput').value = text; sendMessage(); }
 
 // ─── Markdown formatter ───
 function formatMd(raw) {
   return raw
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/```(\w*)\n?([\s\S]*?)```/g, (_,lang,code) =>
-      `<pre>${code.trim()}</pre>`)
-    .replace(/`([^`\n]+)`/g,'<code>$1</code>')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/\n/g,'<br>');
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => '<pre>' + code.trim() + '</pre>')
+    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+}
+
+// ─── ACTION BLOCK parser ───
+// Strips ACTION_BLOCK from reply text and returns { cleanText, action }
+function parseActionBlock(rawReply) {
+  // Match ACTION_BLOCK:{...} with or without surrounding code fences
+  const patterns = [
+    /```[\s\S]*?ACTION_BLOCK:(\{[\s\S]*?\})[\s\S]*?```/,
+    /ACTION_BLOCK:(\{[\s\S]*?\})/
+  ];
+  for (const pattern of patterns) {
+    const match = rawReply.match(pattern);
+    if (match) {
+      try {
+        const action = JSON.parse(match[1]);
+        const cleanText = rawReply.replace(match[0], '').trim();
+        return { cleanText, action };
+      } catch (e) {
+        console.warn('ACTION_BLOCK parse error:', e, match[1]);
+      }
+    }
+  }
+  return { cleanText: rawReply, action: null };
 }
 
 // ─── Append message ───
-function appendMsg(role, text, streaming = false) {
+function appendMsg(role, text) {
   const ws = document.getElementById('welcomeScreen');
   if (ws) ws.remove();
 
@@ -642,13 +618,13 @@ function appendMsg(role, text, streaming = false) {
   const isAnisa = role === 'anisa';
 
   const wrap = document.createElement('div');
-  wrap.className = `msg ${isAnisa ? 'anisa' : 'user'}`;
+  wrap.className = 'msg ' + (isAnisa ? 'anisa' : 'user');
 
   const av = document.createElement('div');
   av.className = 'av';
   if (isAnisa) {
     av.style.cssText = 'background:radial-gradient(circle at 35% 32%,rgba(232,165,152,0.7),rgba(196,181,212,0.5) 60%,rgba(143,184,154,0.4));box-shadow:0 0 12px rgba(232,165,152,0.18);';
-    av.innerHTML = `<svg width="12" height="12" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="rgba(232,165,152,0.6)"/><circle cx="7" cy="7" r="3" fill="rgba(255,255,255,0.3)"/></svg>`;
+    av.innerHTML = '<svg width="12" height="12" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="rgba(232,165,152,0.6)"/><circle cx="7" cy="7" r="3" fill="rgba(255,255,255,0.3)"/></svg>';
   } else {
     av.textContent = 'C';
   }
@@ -662,13 +638,7 @@ function appendMsg(role, text, streaming = false) {
 
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
-
-  if (streaming) {
-    bubble.innerHTML = '<span class="cursor"></span>';
-    currentBubble = bubble;
-  } else {
-    bubble.innerHTML = formatMd(text);
-  }
+  bubble.innerHTML = formatMd(text);
 
   body.appendChild(who);
   body.appendChild(bubble);
@@ -676,9 +646,113 @@ function appendMsg(role, text, streaming = false) {
   wrap.appendChild(body);
   cw.appendChild(wrap);
   cw.scrollTop = cw.scrollHeight;
-  return bubble;
+  return { wrap, body, bubble };
 }
 
+// ─── Render action confirmation card ───
+function renderActionCard(action) {
+  const cw = document.getElementById('chatWindow');
+
+  const card = document.createElement('div');
+  card.className = 'action-card';
+  card.id = 'pendingActionCard';
+
+  let label = '';
+  let details = '';
+
+  if (action.type === 'calendar') {
+    label = '📅 Create Calendar Event';
+    const startDate = new Date(action.start);
+    const endDate = new Date(action.end);
+    const fmt = { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+    details = `
+      <div class="action-detail"><strong>Title:</strong> ${action.summary}</div>
+      <div class="action-detail"><strong>Start:</strong> ${startDate.toLocaleString('en-US', fmt)}</div>
+      <div class="action-detail"><strong>End:</strong> ${endDate.toLocaleString('en-US', fmt)}</div>
+      ${action.description ? '<div class="action-detail"><strong>Notes:</strong> ' + action.description + '</div>' : ''}
+    `;
+  } else if (action.type === 'email') {
+    label = action.action === 'send' ? '📧 Send Email' : '📧 Save Draft';
+    details = `
+      <div class="action-detail"><strong>To:</strong> ${action.to}</div>
+      <div class="action-detail"><strong>Subject:</strong> ${action.subject}</div>
+      <div class="action-detail"><strong>Body:</strong> ${action.body.replace(/\n/g, '<br>')}</div>
+    `;
+  }
+
+  card.innerHTML = `
+    <div class="action-label">${label}</div>
+    ${details}
+    <div class="action-btns">
+      <button class="action-confirm" onclick="executeAction()">Confirm</button>
+      <button class="action-cancel" onclick="cancelAction()">Cancel</button>
+    </div>
+  `;
+
+  cw.appendChild(card);
+  cw.scrollTop = cw.scrollHeight;
+}
+
+// ─── Execute confirmed action ───
+async function executeAction() {
+  const card = document.getElementById('pendingActionCard');
+  if (card) card.remove();
+
+  const action = pendingAction;
+  pendingAction = null;
+
+  if (!action) return;
+
+  const ta = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const typingRow = document.getElementById('typingRow');
+  sendBtn.disabled = true; ta.disabled = true;
+  typingRow.classList.add('active');
+
+  let resultMsg = '';
+
+  try {
+    if (action.type === 'calendar') {
+      const result = await createCalendarEvent(action.summary, action.start, action.end, action.description || '', action.timeZone || 'America/New_York');
+      if (result.success) {
+        const d = new Date(action.start);
+        resultMsg = 'Done — "' + action.summary + '" is on your calendar for ' + d.toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.';
+      } else {
+        resultMsg = 'Something went wrong creating the event: ' + (result.error || JSON.stringify(result));
+      }
+    } else if (action.type === 'email') {
+      const fn = action.action === 'send' ? sendEmail : draftEmail;
+      const result = await fn(action.to, action.subject, action.body);
+      if (result.success) {
+        resultMsg = action.action === 'send'
+          ? 'Email sent to ' + action.to + '.'
+          : 'Draft saved. Draft ID: ' + result.draftId;
+      } else {
+        resultMsg = 'Error: ' + (result.error || JSON.stringify(result));
+      }
+    }
+  } catch (e) {
+    resultMsg = 'Error: ' + e.message;
+  }
+
+  document.getElementById('typingRow').classList.remove('active');
+  history.push({ role: 'assistant', content: resultMsg });
+  appendMsg('anisa', resultMsg);
+  speak(resultMsg);
+  sendBtn.disabled = false; ta.disabled = false; ta.focus();
+  document.getElementById('chatWindow').scrollTop = document.getElementById('chatWindow').scrollHeight;
+}
+
+function cancelAction() {
+  const card = document.getElementById('pendingActionCard');
+  if (card) card.remove();
+  pendingAction = null;
+  const msg = 'Got it — action cancelled.';
+  history.push({ role: 'assistant', content: msg });
+  appendMsg('anisa', msg);
+}
+
+// ─── Send message ───
 async function sendMessage() {
   const ta = document.getElementById('userInput');
   const sendBtn = document.getElementById('sendBtn');
@@ -687,6 +761,27 @@ async function sendMessage() {
 
   const input = ta.value.trim();
   if (!input) return;
+
+  // If there's a pending action card showing, handle yes/no text responses
+  if (pendingAction) {
+    const lower = input.toLowerCase().trim();
+    const yes = ['yes', 'yeah', 'yep', 'yup', 'sure', 'go ahead', 'do it', 'confirm', 'ok', 'okay', 'send it', 'create it', 'absolutely', 'definitely', 'of course', 'please do', 'sounds good', 'looks good', 'that works', 'perfect', 'great', 'do that', 'go for it', 'lets do it', 'affirmative', 'correct', 'right', 'exactly', 'please', 'yes please', 'for sure', 'totally'];
+    const no = ['no', 'nope', 'nah', 'cancel', 'stop', 'nevermind', 'never mind', 'forget it', 'skip', 'abort', 'not now', 'actually no', 'hold on', 'wait', 'discard', 'no thanks', 'pass'];
+    if (yes.some(w => lower === w || lower.startsWith(w + ' '))) {
+      ta.value = ''; ta.style.height = 'auto';
+      appendMsg('user', input);
+      history.push({ role: 'user', content: input });
+      await executeAction();
+      return;
+    }
+    if (no.some(w => lower === w || lower.startsWith(w + ' '))) {
+      ta.value = ''; ta.style.height = 'auto';
+      appendMsg('user', input);
+      history.push({ role: 'user', content: input });
+      cancelAction();
+      return;
+    }
+  }
 
   ta.value = ''; ta.style.height = 'auto';
   appendMsg('user', input);
@@ -697,106 +792,44 @@ async function sendMessage() {
   cw.scrollTop = cw.scrollHeight;
 
   try {
-    // Check if this is a confirmation of a pending action
-    const confirmWords = [
-      'yes', 'yeah', 'yep', 'yup', 'sure', 'go ahead', 'do it', 'confirm', 'confirmed',
-      'ok', 'okay', 'send it', 'create it', 'absolutely', 'definitely', 'of course',
-      'please do', 'sounds good', 'looks good', 'that works', 'perfect', 'great',
-      'do that', 'go for it', 'lets do it', 'let us do it', 'affirmative', 'correct',
-      'right', 'exactly', 'indeed', 'please', 'yes please', 'for sure', 'totally'
-    ];
-    const cancelWords = [
-      'no', 'nope', 'nah', 'cancel', 'stop', 'dont', "don't", 'nevermind', 'never mind',
-      'forget it', 'forget that', 'skip it', 'skip', 'abort', 'negative', 'not now',
-      'actually no', 'on second thought', 'hold on', 'wait', 'discard', 'reject',
-      'no thanks', 'no thank you', 'pass', 'declined', 'decline'
-    ];
-    const msgLower = input.toLowerCase().trim();
-    const isConfirm = pendingAction && confirmWords.some(w => msgLower === w || msgLower.startsWith(w + ' ') || msgLower.endsWith(' ' + w));
-    const isCancel = pendingAction && cancelWords.some(w => msgLower === w || msgLower.startsWith(w + ' ') || msgLower.endsWith(' ' + w));
-
-    if (pendingAction && isConfirm) {
-      typingRow.classList.remove('active');
-      const action = pendingAction;
-      pendingAction = null;
-
-      let resultMsg = '';
-      try {
-        if (action.type === 'calendar') {
-          const result = await createCalendarEvent(action.summary, action.start, action.end, action.description || '');
-          if (result.id) {
-            resultMsg = `Done — "${action.summary}" is on your calendar for ${new Date(action.start).toLocaleString('en-US', {weekday:'long', month:'long', day:'numeric', hour:'numeric', minute:'2-digit'})}.`;
-          } else {
-            resultMsg = `Something went wrong creating the event: ${JSON.stringify(result)}`;
-          }
-        } else if (action.type === 'email') {
-          const result = await draftEmail(action.to, action.subject, action.body);
-          if (result.success) {
-            resultMsg = `Email drafted and saved. Draft ID: ${result.draftId}. Want me to send it now?`;
-            pendingAction = { type: 'send_draft', draftId: result.draftId };
-          } else if (action.send) {
-            const result2 = await sendEmail(action.to, action.subject, action.body);
-            resultMsg = result2.success ? `Email sent to ${action.to}.` : `Error: ${result2.error}`;
-          } else {
-            resultMsg = `Error saving draft: ${result.error}`;
-          }
-        }
-      } catch(e) {
-        resultMsg = `Error executing action: ${e.message}`;
-      }
-
-      history.push({ role: 'assistant', content: resultMsg });
-      appendMsg('anisa', resultMsg);
-      speak(resultMsg);
-      sendBtn.disabled = false; ta.disabled = false; ta.focus();
-      return;
-    }
-
-    if (pendingAction && isCancel) {
-      pendingAction = null;
-      typingRow.classList.remove('active');
-      const msg = "Got it — action cancelled.";
-      history.push({ role: 'assistant', content: msg });
-      appendMsg('anisa', msg);
-      sendBtn.disabled = false; ta.disabled = false; ta.focus();
-      return;
-    }
-
-    // Enrich with Google data if relevant
     const googleData = await enrichWithGoogle(input);
     const enrichedSystem = googleData ? SYSTEM + googleData : SYSTEM;
-
-    const body = {
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1000,
-      stream: false,
-      system: enrichedSystem,
-      messages: history
-    };
 
     const res = await fetch('/.netlify/functions/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1000,
+        stream: false,
+        system: enrichedSystem,
+        messages: history
+      })
     });
 
     typingRow.classList.remove('active');
-
-    if (!res.ok) throw new Error(`API error ${res.status}`);
+    if (!res.ok) throw new Error('API error ' + res.status);
 
     const data = await res.json();
-    const reply = data.content?.[0]?.text || 'No response.';
+    const rawReply = data.content && data.content[0] && data.content[0].text ? data.content[0].text : 'No response.';
 
-    history.push({ role: 'assistant', content: reply });
-    appendMsg('anisa', reply);
-    speak(reply);
+    // Parse out any ACTION_BLOCK
+    const { cleanText, action } = parseActionBlock(rawReply);
 
-    // Parse reply for pending calendar/email actions
-    await parseForPendingAction(input, reply);
+    history.push({ role: 'assistant', content: cleanText });
+    appendMsg('anisa', cleanText);
+    speak(cleanText);
+
+    if (action && googleToken) {
+      pendingAction = action;
+      renderActionCard(action);
+    } else if (action && !googleToken) {
+      appendMsg('anisa', 'I have the details ready, but Google is not connected. Click the 🔗 button to connect first.');
+    }
 
   } catch (err) {
     typingRow.classList.remove('active');
-    appendMsg('anisa', `Something went wrong — ${err.message}. Try again?`);
+    appendMsg('anisa', 'Something went wrong — ' + err.message + '. Try again?');
   } finally {
     sendBtn.disabled = false;
     ta.disabled = false;
@@ -805,27 +838,22 @@ async function sendMessage() {
   }
 }
 
-
-
 // ─── Google Integration ───
 let googleToken = null;
 
-// Check for Google token on every load (cookie or callback)
 function checkGoogleCallback() {
-  // Always check cookie first
   const cookies = document.cookie.split(';');
   const tokenCookie = cookies.find(c => c.trim().startsWith('anisa_google='));
   if (tokenCookie) {
     try {
-      const tokenData = JSON.parse(decodeURIComponent(tokenCookie.split('=')[1].trim()));
+      const raw = tokenCookie.split('=').slice(1).join('=').trim();
+      const tokenData = JSON.parse(decodeURIComponent(raw));
       if (tokenData.access_token && tokenData.expiry > Date.now()) {
         googleToken = tokenData.access_token;
         updateGoogleUI(true);
       }
-    } catch(e) { console.log('Cookie parse error:', e); }
+    } catch (e) { console.log('Cookie parse error:', e); }
   }
-
-  // Also handle fresh OAuth callback
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('google') === 'connected') {
     showToast('Google connected ✓ Calendar & Gmail ready');
@@ -837,34 +865,23 @@ function updateGoogleUI(connected) {
   const btn = document.getElementById('googleBtn');
   const pill = document.getElementById('googlePill');
   if (connected) {
-    btn.classList.add('active');
-    btn.title = 'Google connected';
-    btn.textContent = '✓';
-    pill.textContent = 'Google: On';
-    pill.classList.add('on');
+    btn.classList.add('active'); btn.title = 'Google connected'; btn.textContent = '✓';
+    pill.textContent = 'Google: On'; pill.classList.add('on');
   } else {
-    btn.classList.remove('active');
-    btn.title = 'Connect Google';
-    btn.textContent = '🔗';
-    pill.textContent = 'Google: Off';
-    pill.classList.remove('on');
+    btn.classList.remove('active'); btn.title = 'Connect Google'; btn.textContent = '🔗';
+    pill.textContent = 'Google: Off'; pill.classList.remove('on');
   }
 }
 
 function connectGoogle() {
-  if (googleToken) {
-    showToast('Google already connected!');
-    return;
-  }
+  if (googleToken) { showToast('Google already connected!'); return; }
   window.location.href = '/.netlify/functions/google-auth';
 }
 
 async function getCalendar() {
   if (!googleToken) return null;
   try {
-    const res = await fetch('/.netlify/functions/google-calendar', {
-      headers: { Authorization: `Bearer ${googleToken}` }
-    });
+    const res = await fetch('/.netlify/functions/google-calendar', { headers: { Authorization: 'Bearer ' + googleToken } });
     return await res.json();
   } catch { return null; }
 }
@@ -872,30 +889,17 @@ async function getCalendar() {
 async function getEmails() {
   if (!googleToken) return null;
   try {
-    const res = await fetch('/.netlify/functions/google-gmail', {
-      headers: { Authorization: `Bearer ${googleToken}` }
-    });
+    const res = await fetch('/.netlify/functions/google-gmail', { headers: { Authorization: 'Bearer ' + googleToken } });
     return await res.json();
   } catch { return null; }
 }
 
-// ─── Google Write Functions ───
-async function createCalendarEvent(summary, start, end, description='') {
+async function createCalendarEvent(summary, start, end, description, timeZone) {
   if (!googleToken) return { error: 'Not connected' };
   const res = await fetch('/.netlify/functions/google-calendar-write', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${googleToken}` },
-    body: JSON.stringify({ action: 'create', summary, start, end, description })
-  });
-  return await res.json();
-}
-
-async function deleteCalendarEvent(eventId) {
-  if (!googleToken) return { error: 'Not connected' };
-  const res = await fetch('/.netlify/functions/google-calendar-write', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${googleToken}` },
-    body: JSON.stringify({ action: 'delete', eventId })
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + googleToken },
+    body: JSON.stringify({ action: 'create', summary, start, end, description, timeZone })
   });
   return await res.json();
 }
@@ -904,7 +908,7 @@ async function draftEmail(to, subject, body) {
   if (!googleToken) return { error: 'Not connected' };
   const res = await fetch('/.netlify/functions/google-gmail-send', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${googleToken}` },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + googleToken },
     body: JSON.stringify({ action: 'draft', to, subject, body })
   });
   return await res.json();
@@ -914,108 +918,11 @@ async function sendEmail(to, subject, body) {
   if (!googleToken) return { error: 'Not connected' };
   const res = await fetch('/.netlify/functions/google-gmail-send', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${googleToken}` },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + googleToken },
     body: JSON.stringify({ action: 'send', to, subject, body })
   });
   return await res.json();
 }
-
-// ─── Action Parser — detects Anisa's intent to write ───
-async function handleAnisaAction(reply, userMessage) {
-  const msg = userMessage.toLowerCase();
-  const rep = reply.toLowerCase();
-
-  // Detect email draft request
-  if ((msg.includes('send email') || msg.includes('draft email') || msg.includes('email to')) && googleToken) {
-    // Show confirmation UI
-    showActionConfirmation('email', reply);
-    return;
-  }
-
-  // Detect calendar create request  
-  if ((msg.includes('add to calendar') || msg.includes('schedule') || msg.includes('create event')) && googleToken) {
-    showActionConfirmation('calendar', reply);
-    return;
-  }
-}
-
-// ─── Confirmation UI ───
-function showActionConfirmation(type, details) {
-  const toast = document.getElementById('toast');
-  toast.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:8px;max-width:300px;">
-      <div style="font-size:0.75rem;color:var(--text);">Anisa wants to ${type === 'email' ? 'send an email' : 'add a calendar event'}. Confirm?</div>
-      <div style="display:flex;gap:8px;">
-        <button onclick="confirmAction('${type}')" style="background:rgba(143,184,154,0.2);border:1px solid var(--sage);color:var(--sage);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:0.7rem;">✓ Confirm</button>
-        <button onclick="cancelAction()" style="background:rgba(232,165,152,0.1);border:1px solid var(--rose-dim);color:var(--rose);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:0.7rem;">✗ Cancel</button>
-      </div>
-    </div>`;
-  toast.classList.add('show');
-}
-
-function confirmAction(type) {
-  document.getElementById('toast').classList.remove('show');
-  showToast(`${type === 'email' ? 'Email sent' : 'Event created'} ✓`);
-}
-
-function cancelAction() {
-  document.getElementById('toast').classList.remove('show');
-  showToast('Action cancelled');
-}
-
-// ─── Parse Anisa's reply for actionable intents ───
-async function parseForPendingAction(userMsg, anisaReply) {
-  const reply = anisaReply.toLowerCase();
-
-  const wantsCalendar = reply.includes('should i go ahead and create') ||
-    reply.includes('shall i create') ||
-    reply.includes('want me to create') ||
-    reply.includes('go ahead and create this');
-
-  if (wantsCalendar && reply.includes('title')) {
-    const replyLines = anisaReply.split('\n');
-    let title = '', dateStr = '', timeStr = '';
-    for (const line of replyLines) {
-      const l = line.toLowerCase();
-      if (l.includes('title') && line.includes(':')) title = line.split(':').slice(1).join(':').trim().replace(/[*\-]/g, '').trim();
-      if (l.includes('date') && line.includes(':')) dateStr = line.split(':').slice(1).join(':').trim().replace(/[*\-]/g, '').trim();
-      if (l.includes('time') && line.includes(':')) timeStr = line.split(':').slice(1).join(':').trim().replace(/[*\-]/g, '').trim();
-    }
-    if (title) {
-      try {
-        const timeParts = timeStr.split(/[-to]+/);
-        const startDate = new Date(dateStr + ' ' + (timeParts[0] || '').trim());
-        const endDate = timeParts[1] ? new Date(dateStr + ' ' + timeParts[1].trim()) : new Date(startDate.getTime() + 3600000);
-        if (!isNaN(startDate.getTime())) {
-          pendingAction = { type: 'calendar', summary: title, start: startDate.toISOString(), end: endDate.toISOString(), description: '' };
-          showToast('Say yes to confirm or no to cancel', 4000);
-        }
-      } catch(e) { console.log('Date parse error:', e); }
-    }
-  }
-
-  const wantsEmail = reply.includes('should i go ahead and send') ||
-    reply.includes('want me to send this') ||
-    reply.includes('shall i send') ||
-    reply.includes('go ahead and send');
-
-  if (wantsEmail) {
-    const replyLines = anisaReply.split('\n');
-    let to = '', subject = '', body = '';
-    for (const line of replyLines) {
-      const l = line.toLowerCase();
-      if (l.includes('to:')) to = line.split(':').slice(1).join(':').trim();
-      if (l.includes('subject:')) subject = line.split(':').slice(1).join(':').trim();
-      if (l.includes('body:')) body = line.split(':').slice(1).join(':').trim();
-    }
-    if (to && subject) {
-      pendingAction = { type: 'email', to, subject, body, send: true };
-      showToast('Say yes to send or no to cancel', 4000);
-    }
-  }
-}
-
-// Check for Google data in messages and fetch if needed
 
 async function enrichWithGoogle(userMessage) {
   const msg = userMessage.toLowerCase();
@@ -1023,24 +930,22 @@ async function enrichWithGoogle(userMessage) {
 
   if (googleToken && (msg.includes('calendar') || msg.includes('schedule') || msg.includes('meeting') || msg.includes('event') || msg.includes('appointment') || msg.includes('today') || msg.includes('tomorrow') || msg.includes('week'))) {
     const cal = await getCalendar();
-    if (cal?.items?.length > 0) {
+    if (cal && cal.items && cal.items.length > 0) {
       const events = cal.items.map(e => {
-        const start = e.start?.dateTime || e.start?.date || 'TBD';
-        return `- ${e.summary} at ${new Date(start).toLocaleString()}`;
+        const start = e.start && (e.start.dateTime || e.start.date) || 'TBD';
+        return '- ' + e.summary + ' at ' + new Date(start).toLocaleString();
       }).join('\n');
-      googleData += `\n\n[CALENDAR - Next 7 days]\n${events}`;
-    } else if (cal?.items) {
+      googleData += '\n\n[CALENDAR - Next 7 days]\n' + events;
+    } else if (cal && cal.items) {
       googleData += '\n\n[CALENDAR] No upcoming events found.';
     }
   }
 
   if (googleToken && (msg.includes('email') || msg.includes('gmail') || msg.includes('inbox') || msg.includes('unread') || msg.includes('mail'))) {
     const mail = await getEmails();
-    if (mail?.emails?.length > 0) {
-      const emails = mail.emails.map(e =>
-        `- From: ${e.from}\n  Subject: ${e.subject}\n  Preview: ${e.snippet}`
-      ).join('\n');
-      googleData += `\n\n[GMAIL - Unread emails]\n${emails}`;
+    if (mail && mail.emails && mail.emails.length > 0) {
+      const emails = mail.emails.map(e => '- From: ' + e.from + '\n  Subject: ' + e.subject + '\n  Preview: ' + e.snippet).join('\n');
+      googleData += '\n\n[GMAIL - Unread emails]\n' + emails;
     } else {
       googleData += '\n\n[GMAIL] No unread emails found.';
     }
@@ -1049,10 +954,8 @@ async function enrichWithGoogle(userMessage) {
   return googleData;
 }
 
-// Initialize Google check on load
 checkGoogleCallback();
 
-// Preload voices for speech synthesis
 if (window.speechSynthesis) {
   window.speechSynthesis.getVoices();
   window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
