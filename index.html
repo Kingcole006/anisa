@@ -479,6 +479,72 @@
   }
   .job-mode-exit:hover { color: var(--rose); }
 
+  /* ─── Notification Settings Panel ─── */
+  .notif-settings {
+    display: none;
+    position: fixed; top: 70px; right: 16px;
+    width: 280px; z-index: 200;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    animation: fadeUp 0.2s ease forwards;
+  }
+  .notif-settings.show { display: block; }
+  .notif-settings-title {
+    font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 12px; font-weight: 500;
+  }
+  .notif-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.74rem; color: var(--text-mid);
+  }
+  .notif-row:last-child { border-bottom: none; }
+  .notif-row-left { display: flex; align-items: center; gap: 8px; }
+  .notif-row-icon { font-size: 0.85rem; width: 18px; text-align: center; }
+
+  /* Toggle switch */
+  .toggle {
+    position: relative; width: 32px; height: 18px; flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute; inset: 0; border-radius: 9px;
+    background: rgba(255,255,255,0.1); cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle input:checked + .toggle-track { background: rgba(143,184,154,0.5); }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: rgba(255,255,255,0.6);
+    transition: transform 0.2s, background 0.2s;
+    pointer-events: none;
+  }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(14px); background: var(--sage); }
+
+  .notif-permission-banner {
+    display: none;
+    background: rgba(196,181,212,0.07);
+    border: 1px solid rgba(196,181,212,0.2);
+    border-radius: 10px; padding: 12px 14px;
+    margin-bottom: 10px; flex-shrink: 0;
+    font-size: 0.74rem; color: var(--lavender);
+    align-items: center; gap: 10px;
+    justify-content: space-between;
+  }
+  .notif-permission-banner.show { display: flex; }
+  .notif-allow-btn {
+    background: rgba(196,181,212,0.15); border: 1px solid rgba(196,181,212,0.3);
+    border-radius: 6px; padding: 5px 12px;
+    color: var(--lavender); font-family: 'DM Sans', sans-serif;
+    font-size: 0.68rem; cursor: pointer; white-space: nowrap;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .notif-allow-btn:hover { background: rgba(196,181,212,0.25); }
+
   .install-banner {
     display:none;position:fixed;bottom:0;left:0;right:0;
     background:linear-gradient(135deg,rgba(23,20,31,0.97),rgba(15,13,19,0.97));
@@ -530,6 +596,33 @@
   </div>
 </div>
 
+<!-- Notification Permission Banner -->
+<div class="notif-permission-banner" id="notifPermBanner">
+  <span>🔔 Enable notifications so Anisa can remind you about meetings and goals.</span>
+  <button class="notif-allow-btn" onclick="requestNotifPermission()">Enable</button>
+</div>
+
+<!-- Notification Settings Panel -->
+<div class="notif-settings" id="notifSettings">
+  <div class="notif-settings-title">🔔 Notification Settings</div>
+  <div class="notif-row">
+    <div class="notif-row-left"><span class="notif-row-icon">📅</span>Meeting alerts (30 min before)</div>
+    <label class="toggle"><input type="checkbox" id="notifMeetings" checked onchange="saveNotifSettings()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+  </div>
+  <div class="notif-row">
+    <div class="notif-row-left"><span class="notif-row-icon">☀️</span>Daily briefing reminder (9am)</div>
+    <label class="toggle"><input type="checkbox" id="notifBriefing" checked onchange="saveNotifSettings()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+  </div>
+  <div class="notif-row">
+    <div class="notif-row-left"><span class="notif-row-icon">🐙</span>GitHub streak reminder (6pm)</div>
+    <label class="toggle"><input type="checkbox" id="notifGithub" checked onchange="saveNotifSettings()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+  </div>
+  <div class="notif-row">
+    <div class="notif-row-left"><span class="notif-row-icon">💼</span>Job application follow-ups</div>
+    <label class="toggle"><input type="checkbox" id="notifJobs" onchange="saveNotifSettings()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+  </div>
+</div>
+
 <div class="install-banner" id="installBanner">
   <p>Add <strong>Anisa</strong> to your desktop for instant access.</p>
   <div class="install-row">
@@ -557,10 +650,17 @@
       <button class="icon-btn" id="searchToggle" title="Web search" onclick="toggleSearch()">🔍</button>
       <button class="icon-btn" id="voiceToggle" title="Voice responses" onclick="toggleVoice()">🔈</button>
       <button class="icon-btn" id="googleBtn" title="Connect Google" onclick="connectGoogle()">🔗</button>
+      <button class="icon-btn" id="notifBtn" title="Notification settings" onclick="toggleNotifSettings()">🔔</button>
       <button class="icon-btn" id="dashBtn" title="Dashboard" onclick="toggleDashboard()">📊</button>
       <button class="icon-btn" title="Clear chat" onclick="clearChat()">🗑</button>
     </div>
   </header>
+
+  <!-- Notification Permission Banner (in-chat) -->
+  <div class="notif-permission-banner" id="notifPermBannerInner">
+    <span>🔔 Enable notifications so Anisa can remind you about meetings and goals.</span>
+    <button class="notif-allow-btn" onclick="requestNotifPermission()">Enable</button>
+  </div>
 
   <!-- Job Search Mode Banner -->
   <div class="job-mode-banner" id="jobModeBanner">
@@ -1687,6 +1787,259 @@ chatWin.addEventListener('drop', async e => {
     await handleFileUpload(fakeEvent);
   }
 });
+
+
+// ═══════════════════════════════════════════════
+// PHASE 4 — Notifications + Reminders
+// ═══════════════════════════════════════════════
+
+// ─── Notification settings state ───
+let notifSettings = {
+  meetings: true,
+  briefing: true,
+  github: true,
+  jobs: false
+};
+
+let notifCheckInterval = null;
+let meetingAlertsFired = new Set(); // track which events we've already alerted
+
+function loadNotifSettings() {
+  try {
+    const saved = localStorage.getItem('anisa_notif_settings');
+    if (saved) {
+      notifSettings = { ...notifSettings, ...JSON.parse(saved) };
+      document.getElementById('notifMeetings').checked = notifSettings.meetings;
+      document.getElementById('notifBriefing').checked = notifSettings.briefing;
+      document.getElementById('notifGithub').checked = notifSettings.github;
+      document.getElementById('notifJobs').checked = notifSettings.jobs;
+    }
+  } catch (e) { console.log('Notif settings load error:', e); }
+}
+
+function saveNotifSettings() {
+  notifSettings.meetings = document.getElementById('notifMeetings').checked;
+  notifSettings.briefing = document.getElementById('notifBriefing').checked;
+  notifSettings.github = document.getElementById('notifGithub').checked;
+  notifSettings.jobs = document.getElementById('notifJobs').checked;
+  try { localStorage.setItem('anisa_notif_settings', JSON.stringify(notifSettings)); } catch {}
+  showToast('Notification settings saved');
+}
+
+// ─── Permission request ───
+async function requestNotifPermission() {
+  if (!('Notification' in window)) {
+    showToast('Notifications not supported in this browser');
+    return;
+  }
+  const permission = await Notification.requestPermission();
+  if (permission === 'granted') {
+    document.getElementById('notifPermBanner') && document.getElementById('notifPermBanner').classList.remove('show');
+    document.getElementById('notifPermBannerInner').classList.remove('show');
+    document.getElementById('notifBtn').classList.add('active');
+    showToast('Notifications enabled ✓');
+    localStorage.setItem('anisa_notif_asked', '1');
+    startNotifChecks();
+    // Send a welcome notification
+    sendNotification('Anisa', 'Notifications are on. I\'ll keep you on track.', '🔔');
+  } else {
+    showToast('Notifications blocked — you can enable them in browser settings');
+    localStorage.setItem('anisa_notif_asked', '1');
+    hideBanners();
+  }
+}
+
+function hideBanners() {
+  const b1 = document.getElementById('notifPermBanner');
+  const b2 = document.getElementById('notifPermBannerInner');
+  if (b1) b1.classList.remove('show');
+  if (b2) b2.classList.remove('show');
+}
+
+// ─── Check permission state on load ───
+function checkNotifPermissionState() {
+  if (!('Notification' in window)) return;
+  const asked = localStorage.getItem('anisa_notif_asked');
+  if (Notification.permission === 'granted') {
+    document.getElementById('notifBtn').classList.add('active');
+    startNotifChecks();
+  } else if (Notification.permission === 'default' && !asked) {
+    // Show permission banner after a short delay
+    setTimeout(() => {
+      document.getElementById('notifPermBannerInner').classList.add('show');
+    }, 3000);
+  }
+}
+
+// ─── Send a notification ───
+function sendNotification(title, body, icon = '🔔') {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    const n = new Notification(title, {
+      body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag: title + body, // prevent duplicates
+      requireInteraction: false
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+    setTimeout(() => n.close(), 8000);
+  } catch (e) { console.log('Notification error:', e); }
+}
+
+// ─── Meeting alerts ───
+async function checkMeetingAlerts() {
+  if (!notifSettings.meetings || !googleToken) return;
+  try {
+    const cal = await getCalendar();
+    if (!cal || !cal.items) return;
+    const now = Date.now();
+    const thirtyMin = 30 * 60 * 1000;
+    cal.items.forEach(event => {
+      if (!event.start || !event.start.dateTime) return;
+      const start = new Date(event.start.dateTime).getTime();
+      const timeUntil = start - now;
+      const alertKey = event.id + '_30min';
+      // Alert if between 28-32 minutes away (catches the check window)
+      if (timeUntil > 0 && timeUntil < thirtyMin + 2 * 60 * 1000 && timeUntil > thirtyMin - 2 * 60 * 1000) {
+        if (!meetingAlertsFired.has(alertKey)) {
+          meetingAlertsFired.add(alertKey);
+          sendNotification(
+            '📅 ' + event.summary,
+            'Starting in 30 minutes' + (event.location ? ' · ' + event.location : ''),
+            '📅'
+          );
+        }
+      }
+      // 5 minute warning
+      const alertKey5 = event.id + '_5min';
+      if (timeUntil > 0 && timeUntil < 5 * 60 * 1000 + 2 * 60 * 1000 && timeUntil > 5 * 60 * 1000 - 2 * 60 * 1000) {
+        if (!meetingAlertsFired.has(alertKey5)) {
+          meetingAlertsFired.add(alertKey5);
+          sendNotification(
+            '📅 Starting soon: ' + event.summary,
+            'Beginning in 5 minutes',
+            '📅'
+          );
+        }
+      }
+    });
+  } catch (e) { console.log('Meeting alert check error:', e); }
+}
+
+// ─── Daily briefing reminder (9am) ───
+function checkBriefingReminder() {
+  if (!notifSettings.briefing) return;
+  const now = new Date();
+  const hour = now.getHours();
+  const min = now.getMinutes();
+  const todayKey = 'briefing_notif_' + now.toDateString();
+  // Fire between 9:00 and 9:02
+  if (hour === 9 && min < 3 && !localStorage.getItem(todayKey)) {
+    localStorage.setItem(todayKey, '1');
+    sendNotification(
+      'Good morning, Cole ☀️',
+      'Your daily briefing is ready. Open Anisa to start your day.',
+      '☀️'
+    );
+  }
+}
+
+// ─── GitHub streak reminder (6pm) ───
+async function checkGithubReminder() {
+  if (!notifSettings.github) return;
+  const now = new Date();
+  const hour = now.getHours();
+  const min = now.getMinutes();
+  const todayKey = 'github_notif_' + now.toDateString();
+  // Fire between 6:00pm and 6:02pm
+  if (hour === 18 && min < 3 && !localStorage.getItem(todayKey)) {
+    try {
+      const res = await fetch('https://api.github.com/users/Kingcole006/events/public?per_page=5');
+      const events = res.ok ? await res.json() : [];
+      const today = new Date().toDateString();
+      const pushedToday = events.some(e => {
+        return e.type === 'PushEvent' && new Date(e.created_at).toDateString() === today;
+      });
+      if (!pushedToday) {
+        localStorage.setItem(todayKey, '1');
+        sendNotification(
+          '🐙 No GitHub push today',
+          'Keep your streak alive — push something before midnight.',
+          '🐙'
+        );
+      } else {
+        localStorage.setItem(todayKey, '1'); // already pushed, mark as seen
+      }
+    } catch (e) { console.log('GitHub reminder error:', e); }
+  }
+}
+
+// ─── Job application follow-up reminder ───
+function checkJobReminder() {
+  if (!notifSettings.jobs) return;
+  const now = new Date();
+  const hour = now.getHours();
+  const min = now.getMinutes();
+  const todayKey = 'job_notif_' + now.toDateString();
+  // Fire at 10am
+  if (hour === 10 && min < 3 && !localStorage.getItem(todayKey)) {
+    localStorage.setItem(todayKey, '1');
+    sendNotification(
+      '💼 Job Search Check-in',
+      'Have you applied to a role today? Use /jobs to get help tailoring your application.',
+      '💼'
+    );
+  }
+}
+
+// ─── Master check loop ───
+function runAllNotifChecks() {
+  checkMeetingAlerts();
+  checkBriefingReminder();
+  checkGithubReminder();
+  checkJobReminder();
+}
+
+function startNotifChecks() {
+  if (notifCheckInterval) clearInterval(notifCheckInterval);
+  // Check every 2 minutes
+  notifCheckInterval = setInterval(runAllNotifChecks, 2 * 60 * 1000);
+  // Also run immediately
+  setTimeout(runAllNotifChecks, 2000);
+}
+
+// ─── Notif settings panel toggle ───
+function toggleNotifSettings() {
+  const panel = document.getElementById('notifSettings');
+  const isOpen = panel.classList.contains('show');
+  if (isOpen) {
+    panel.classList.remove('show');
+    document.getElementById('notifBtn').classList.remove('active');
+  } else {
+    panel.classList.add('show');
+    document.getElementById('notifBtn').classList.add('active');
+    loadNotifSettings();
+  }
+}
+
+// Close notif panel on outside click
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('notifSettings');
+  if (panel.classList.contains('show') &&
+      !e.target.closest('#notifSettings') &&
+      !e.target.closest('#notifBtn')) {
+    panel.classList.remove('show');
+    document.getElementById('notifBtn').classList.remove('active');
+  }
+});
+
+// ─── Add /notify slash command ───
+SLASH_COMMANDS['/notify'] = () => toggleNotifSettings();
+
+// ─── Init notifications on load ───
+loadNotifSettings();
+checkNotifPermissionState();
 
 // Initialize briefing check after Google callback check
 setTimeout(maybeShowBriefing, 500);
