@@ -1534,17 +1534,48 @@ async function sendMessage() {
   await _origSendMessage();
 }
 
-// ─── Patch enrichWithGoogle to also include GitHub when relevant ───
+// ─── Patch enrichWithGoogle to also include GitHub and Drive when relevant ───
 const _origEnrichWithGoogle = enrichWithGoogle;
 async function enrichWithGoogle(userMessage) {
   let data = await _origEnrichWithGoogle(userMessage);
   const msg = userMessage.toLowerCase();
+
+  // GitHub enrichment
   if (msg.includes('github') || msg.includes('commit') || msg.includes('repo') || msg.includes('push') || msg.includes('code') || msg.includes('portfolio')) {
     const ghData = await fetchGitHub();
     data += ghData;
   }
+
+  // Drive enrichment (Phase 5) — inline here to avoid recursive patching
+  if (googleToken) {
+    const driveKeywords = ['resume', 'cover letter', 'document', 'my notes', 'my doc', 'drive', 'google doc', 'find my', 'look up my', 'pull up my'];
+    const shouldSearch = driveKeywords.some(k => msg.includes(k));
+    if (shouldSearch) {
+      let searchTerm = '';
+      if (msg.includes('resume')) searchTerm = 'resume';
+      else if (msg.includes('cover letter')) searchTerm = 'cover letter';
+      else if (msg.includes('notes')) searchTerm = 'notes';
+      else {
+        const match = msg.match(/(?:my|find|look up|pull up)\s+([a-z\s]+?)(?:\s+in|\s+from|$)/);
+        if (match) searchTerm = match[1].trim();
+      }
+      if (searchTerm) {
+        try {
+          const result = await driveSearch(searchTerm);
+          if (result && result.files && result.files.length > 0) {
+            const fileList = result.files.slice(0, 3).map(f =>
+              '- ' + f.name + ' (modified ' + new Date(f.modifiedTime).toLocaleDateString() + ')'
+            ).join('\n');
+            data += '\n\n[GOOGLE DRIVE - Files matching "' + searchTerm + '"]\n' + fileList;
+          }
+        } catch {}
+      }
+    }
+  }
+
   return data;
 }
+
 
 
 // ═══════════════════════════════════════════════
@@ -2209,14 +2240,6 @@ SLASH_COMMANDS['/drive'] = async () => {
   const result = await driveSearch(query);
   showDriveResults(result && result.files, 'Results for "' + query + '":');
 };
-
-// ─── Patch enrichWithGoogle to also check Drive ───
-const _origEnrichWithGoogleP5 = enrichWithGoogle;
-async function enrichWithGoogle(userMessage) {
-  const base = await _origEnrichWithGoogleP5(userMessage);
-  const driveData = await enrichWithDrive(userMessage);
-  return base + driveData;
-}
 
 // ─── Add Drive section to dashboard ───
 const _origLoadDashboard = loadDashboard;
