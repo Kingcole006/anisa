@@ -282,6 +282,66 @@
   strong { color:var(--rose);font-weight:500; }
   pre { background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:0.78rem;font-family:'Courier New',monospace;color:#b8d4b8;margin:4px 0;line-height:1.6; }
 
+  /* ─── Daily Briefing Banner ─── */
+  .briefing-banner {
+    display: none;
+    background: rgba(143,184,154,0.05);
+    border: 1px solid rgba(143,184,154,0.15);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    animation: fadeUp 0.6s ease forwards;
+    flex-shrink: 0;
+  }
+  .briefing-banner.show { display: block; }
+  .briefing-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .briefing-title {
+    font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--sage); font-weight: 500;
+  }
+  .briefing-close {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 0.75rem; padding: 0;
+    transition: color 0.2s;
+  }
+  .briefing-close:hover { color: var(--rose); }
+  .briefing-content { font-size: 0.78rem; color: var(--text-mid); line-height: 1.7; }
+  .briefing-content strong { color: var(--text); font-weight: 500; }
+  .briefing-loading {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.72rem; color: var(--text-dim);
+  }
+  .briefing-spinner {
+    width: 10px; height: 10px;
+    border: 1.5px solid rgba(143,184,154,0.3);
+    border-top-color: var(--sage);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* ─── Slash command autocomplete ─── */
+  .slash-menu {
+    display: none;
+    position: absolute; bottom: 100%; left: 0; right: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: 6px;
+    overflow: hidden; z-index: 50;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .slash-menu.show { display: block; }
+  .slash-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; cursor: pointer;
+    transition: background 0.15s; font-size: 0.78rem;
+  }
+  .slash-item:hover, .slash-item.active { background: rgba(255,255,255,0.05); }
+  .slash-icon { font-size: 0.9rem; width: 20px; text-align: center; flex-shrink: 0; }
+  .slash-cmd { color: var(--rose); font-weight: 500; letter-spacing: 0.03em; }
+  .slash-desc { color: var(--text-dim); font-size: 0.68rem; margin-left: auto; }
+
   .install-banner {
     display:none;position:fixed;bottom:0;left:0;right:0;
     background:linear-gradient(135deg,rgba(23,20,31,0.97),rgba(15,13,19,0.97));
@@ -347,6 +407,17 @@
     </div>
   </header>
 
+  <!-- Daily Briefing Banner -->
+  <div class="briefing-banner" id="briefingBanner">
+    <div class="briefing-header">
+      <div class="briefing-title">☀️ Good morning, Cole</div>
+      <button class="briefing-close" onclick="closeBriefing()">✕</button>
+    </div>
+    <div class="briefing-content" id="briefingContent">
+      <div class="briefing-loading"><div class="briefing-spinner"></div>Loading your briefing…</div>
+    </div>
+  </div>
+
   <div class="chat-window" id="chatWindow">
     <div class="welcome" id="welcomeScreen">
       <div class="welcome-orb">
@@ -387,7 +458,18 @@
   </div>
 
   <div class="input-area">
-    <div class="input-shell">
+    <div style="position:relative;">
+      <!-- Slash command menu -->
+      <div class="slash-menu" id="slashMenu">
+        <div class="slash-item" onclick="selectSlash('/brief')"><span class="slash-icon">☀️</span><span class="slash-cmd">/brief</span><span class="slash-desc">Daily briefing</span></div>
+        <div class="slash-item" onclick="selectSlash('/calendar')"><span class="slash-icon">📅</span><span class="slash-cmd">/calendar</span><span class="slash-desc">Today's schedule</span></div>
+        <div class="slash-item" onclick="selectSlash('/email')"><span class="slash-icon">📧</span><span class="slash-cmd">/email</span><span class="slash-desc">Check unread emails</span></div>
+        <div class="slash-item" onclick="selectSlash('/github')"><span class="slash-icon">🐙</span><span class="slash-cmd">/github</span><span class="slash-desc">Recent GitHub activity</span></div>
+        <div class="slash-item" onclick="selectSlash('/resume')"><span class="slash-icon">📄</span><span class="slash-cmd">/resume</span><span class="slash-desc">Resume bullet points</span></div>
+        <div class="slash-item" onclick="selectSlash('/test')"><span class="slash-icon">🧪</span><span class="slash-cmd">/test</span><span class="slash-desc">Scaffold a Playwright test</span></div>
+        <div class="slash-item" onclick="selectSlash('/focus')"><span class="slash-icon">🎯</span><span class="slash-cmd">/focus</span><span class="slash-desc">What to work on today</span></div>
+      </div>
+      <div class="input-shell">
       <textarea id="userInput" placeholder="Talk to Anisa…" rows="1"></textarea>
       <div class="input-btns">
         <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Voice input">🎙️</button>
@@ -405,6 +487,7 @@
       </div>
       <span>Enter · Shift+Enter new line</span>
     </div>
+    </div><!-- end position:relative -->
   </div>
 </div>
 
@@ -953,6 +1036,250 @@ async function enrichWithGoogle(userMessage) {
 
   return googleData;
 }
+
+
+// ═══════════════════════════════════════════════
+// PHASE 2 — Slash Commands, GitHub, Daily Briefing
+// ═══════════════════════════════════════════════
+
+// ─── Slash command definitions ───
+const SLASH_COMMANDS = {
+  '/brief':    () => runDailyBriefing(true),
+  '/calendar': () => quickSend('What does my calendar look like today and tomorrow?'),
+  '/email':    () => quickSend('Check my unread emails and give me a summary.'),
+  '/github':   () => quickSend('Show me my recent GitHub activity — latest commits and repos.'),
+  '/resume':   () => quickSend('Give me strong bullet points summarizing my QA Automation skills and projects for a job application.'),
+  '/test':     () => quickSend('Scaffold a Playwright TypeScript test for me. Ask me what page or feature to test.'),
+  '/focus':    () => quickSend('Based on where I am in my QA career journey, what should I focus on today?'),
+};
+
+// ─── Slash menu handling ───
+document.getElementById('userInput').addEventListener('input', function() {
+  autoResize();
+  const val = this.value;
+  const menu = document.getElementById('slashMenu');
+  if (val === '/' || (val.startsWith('/') && !val.includes(' '))) {
+    const query = val.toLowerCase();
+    const items = menu.querySelectorAll('.slash-item');
+    let anyVisible = false;
+    items.forEach(item => {
+      const cmd = item.querySelector('.slash-cmd').textContent;
+      const match = query === '/' || cmd.startsWith(query);
+      item.style.display = match ? 'flex' : 'none';
+      if (match) anyVisible = true;
+    });
+    menu.classList.toggle('show', anyVisible);
+  } else {
+    menu.classList.remove('show');
+  }
+});
+
+function selectSlash(cmd) {
+  document.getElementById('slashMenu').classList.remove('show');
+  document.getElementById('userInput').value = cmd;
+  autoResize();
+  // Execute immediately
+  const handler = SLASH_COMMANDS[cmd];
+  if (handler) {
+    document.getElementById('userInput').value = '';
+    handler();
+  }
+}
+
+// Close slash menu on outside click
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.slash-menu') && !e.target.closest('#userInput')) {
+    document.getElementById('slashMenu').classList.remove('show');
+  }
+});
+
+// Override keydown to intercept slash commands on Enter
+const _origKeydown = document.getElementById('userInput').onkeydown;
+document.getElementById('userInput').addEventListener('keydown', function(e) {
+  const menu = document.getElementById('slashMenu');
+  if (menu.classList.contains('show') && e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    const firstVisible = Array.from(menu.querySelectorAll('.slash-item')).find(i => i.style.display !== 'none');
+    if (firstVisible) {
+      const cmd = firstVisible.querySelector('.slash-cmd').textContent;
+      selectSlash(cmd);
+    }
+    return;
+  }
+});
+
+// ─── GitHub Integration ───
+async function fetchGitHub() {
+  try {
+    const [reposRes, eventsRes] = await Promise.all([
+      fetch('https://api.github.com/users/Kingcole006/repos?sort=updated&per_page=5'),
+      fetch('https://api.github.com/users/Kingcole006/events/public?per_page=10')
+    ]);
+    const repos = reposRes.ok ? await reposRes.json() : [];
+    const events = eventsRes.ok ? await eventsRes.json() : [];
+
+    let summary = '\n\n[GITHUB]\n';
+
+    if (repos.length > 0) {
+      summary += 'Recent repos:\n';
+      repos.forEach(r => {
+        summary += '- ' + r.name + (r.description ? ': ' + r.description : '') + ' (updated ' + new Date(r.updated_at).toLocaleDateString() + ')\n';
+      });
+    }
+
+    const pushEvents = events.filter(e => e.type === 'PushEvent').slice(0, 3);
+    if (pushEvents.length > 0) {
+      summary += 'Recent commits:\n';
+      pushEvents.forEach(e => {
+        const commits = e.payload.commits || [];
+        commits.slice(0, 2).forEach(c => {
+          summary += '- [' + e.repo.name.split('/')[1] + '] ' + c.message + '\n';
+        });
+      });
+    }
+
+    return summary;
+  } catch (e) {
+    return '\n\n[GITHUB] Unable to fetch GitHub data.';
+  }
+}
+
+// ─── Daily Briefing ───
+async function runDailyBriefing(manual = false) {
+  const banner = document.getElementById('briefingBanner');
+  const content = document.getElementById('briefingContent');
+
+  // Update greeting based on time of day
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  banner.querySelector('.briefing-title').textContent = (hour < 12 ? '☀️' : hour < 17 ? '🌤️' : '🌙') + ' ' + greeting + ', Cole';
+
+  content.innerHTML = '<div class="briefing-loading"><div class="briefing-spinner"></div>Loading your briefing…</div>';
+  banner.classList.add('show');
+
+  try {
+    let calendarData = '';
+    let emailData = '';
+    let githubData = '';
+
+    // Fetch all data in parallel
+    const [calRes, mailRes, ghData] = await Promise.all([
+      googleToken ? getCalendar() : null,
+      googleToken ? getEmails() : null,
+      fetchGitHub()
+    ]);
+
+    if (calRes && calRes.items && calRes.items.length > 0) {
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+      const dayAfter = new Date(today); dayAfter.setDate(dayAfter.getDate() + 2);
+
+      const todayEvents = calRes.items.filter(e => {
+        const d = new Date(e.start.dateTime || e.start.date);
+        return d >= today && d < tomorrow;
+      });
+      const tomorrowEvents = calRes.items.filter(e => {
+        const d = new Date(e.start.dateTime || e.start.date);
+        return d >= tomorrow && d < dayAfter;
+      });
+
+      calendarData = todayEvents.length > 0
+        ? todayEvents.map(e => '• ' + e.summary + ' at ' + new Date(e.start.dateTime || e.start.date).toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'})).join('<br>')
+        : 'Nothing scheduled today.';
+
+      if (tomorrowEvents.length > 0) {
+        calendarData += '<br><strong>Tomorrow:</strong> ' + tomorrowEvents.map(e => e.summary).join(', ');
+      }
+    } else if (googleToken) {
+      calendarData = 'No events found.';
+    } else {
+      calendarData = '<span style="color:var(--rose-dim)">Connect Google to see your calendar</span>';
+    }
+
+    if (mailRes && mailRes.emails) {
+      emailData = mailRes.emails.length > 0
+        ? mailRes.emails.length + ' unread — ' + mailRes.emails.slice(0,2).map(e => e.from.split('<')[0].trim()).join(', ') + (mailRes.emails.length > 2 ? ' +' + (mailRes.emails.length - 2) + ' more' : '')
+        : 'Inbox clear.';
+    } else if (googleToken) {
+      emailData = 'No unread emails.';
+    } else {
+      emailData = '<span style="color:var(--rose-dim)">Connect Google to see emails</span>';
+    }
+
+    // Parse GitHub summary for display
+    const ghLines = ghData.replace('[GITHUB]', '').trim().split('\n').filter(Boolean);
+    const repoLine = ghLines.find(l => l.startsWith('- '));
+    githubData = repoLine ? repoLine.replace('- ', '') : 'No recent activity.';
+
+    const date = new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+
+    content.innerHTML = `
+      <div style="margin-bottom:8px;font-size:0.7rem;color:var(--text-dim);">${date}</div>
+      <div style="display:grid;gap:8px;">
+        <div><strong>📅 Today:</strong> ${calendarData}</div>
+        <div><strong>📧 Email:</strong> ${emailData}</div>
+        <div><strong>🐙 GitHub:</strong> ${githubData}</div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:0.7rem;color:var(--text-dim);">
+        Try <span style="color:var(--rose)">/focus</span> to get today's priority, or just start talking.
+      </div>`;
+
+  } catch (e) {
+    content.innerHTML = '<span style="color:var(--rose-dim)">Briefing unavailable — ' + e.message + '</span>';
+  }
+}
+
+function closeBriefing() {
+  document.getElementById('briefingBanner').classList.remove('show');
+  sessionStorage.setItem('briefing_dismissed', '1');
+}
+
+// ─── Auto-briefing on load (once per session) ───
+function maybeShowBriefing() {
+  const dismissed = sessionStorage.getItem('briefing_dismissed');
+  const lastShown = sessionStorage.getItem('briefing_shown');
+  if (dismissed || lastShown) return;
+  sessionStorage.setItem('briefing_shown', '1');
+  // Small delay so page renders first
+  setTimeout(() => runDailyBriefing(false), 1200);
+}
+
+// ─── Patch sendMessage to handle slash commands typed manually ───
+const _origSendMessage = sendMessage;
+async function sendMessage() {
+  const ta = document.getElementById('userInput');
+  const val = ta.value.trim();
+  const handler = SLASH_COMMANDS[val];
+  if (handler) {
+    ta.value = '';
+    ta.style.height = 'auto';
+    document.getElementById('slashMenu').classList.remove('show');
+    handler();
+    return;
+  }
+
+  // Also enrich with GitHub data if the message is about GitHub
+  if (val.toLowerCase().includes('github') || val.toLowerCase().includes('commit') || val.toLowerCase().includes('repo')) {
+    window._pendingGithubFetch = true;
+  }
+  await _origSendMessage();
+}
+
+// ─── Patch enrichWithGoogle to also include GitHub when relevant ───
+const _origEnrichWithGoogle = enrichWithGoogle;
+async function enrichWithGoogle(userMessage) {
+  let data = await _origEnrichWithGoogle(userMessage);
+  const msg = userMessage.toLowerCase();
+  if (msg.includes('github') || msg.includes('commit') || msg.includes('repo') || msg.includes('push') || msg.includes('code') || msg.includes('portfolio')) {
+    const ghData = await fetchGitHub();
+    data += ghData;
+  }
+  return data;
+}
+
+// Initialize briefing check after Google callback check
+setTimeout(maybeShowBriefing, 500);
 
 checkGoogleCallback();
 
