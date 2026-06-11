@@ -59,8 +59,11 @@ function detectWriteIntent(messages) {
   const msg = last.content.toLowerCase();
 
   const calendarTriggers = ['add to calendar', 'create event', 'schedule a', 'put on my calendar', 'add a', 'block time', 'remind me', 'set up a meeting', 'add pickleball', 'add a session', 'schedule me', 'create a'];
+  const calendarDeleteTriggers = ['remove', 'delete', 'cancel', 'remove from calendar', 'delete from calendar', 'cancel the event', 'remove the event', 'delete the event', 'remove my', 'delete my', 'cancel my'];
   const emailTriggers = ['send an email', 'send email', 'email to', 'draft an email', 'draft email', 'write an email', 'shoot an email', 'send a message to', 'email my', 'send my'];
 
+  // Check delete before create to avoid false positives
+  if (calendarDeleteTriggers.some(t => msg.includes(t)) && (msg.includes('event') || msg.includes('meeting') || msg.includes('session') || msg.includes('appointment') || msg.includes('calendar'))) return 'calendar_delete';
   if (calendarTriggers.some(t => msg.includes(t))) return 'calendar';
   if (emailTriggers.some(t => msg.includes(t))) return 'email';
   return null;
@@ -70,9 +73,15 @@ function detectWriteIntent(messages) {
 function buildEnforcementReminder(intent) {
   if (intent === 'calendar') {
     return `SYSTEM REMINDER: The user just requested a calendar event. You MUST end your response with an ACTION_BLOCK in this exact format (no exceptions):
-ACTION_BLOCK:{"type":"calendar","summary":"<title>","start":"<ISO datetime>","end":"<ISO datetime>","description":"<optional>","timeZone":"America/New_York"}
+ACTION_BLOCK:{"type":"calendar","action":"create","summary":"<title>","start":"<ISO datetime>","end":"<ISO datetime>","description":"<optional>","timeZone":"America/New_York"}
 
 Do not skip this. Do not say you will create it. Output the ACTION_BLOCK JSON on its own line at the very end.`;
+  }
+  if (intent === 'calendar_delete') {
+    return `SYSTEM REMINDER: The user wants to DELETE a calendar event. You will receive calendar data in context. Find the matching event, then you MUST end your response with an ACTION_BLOCK in this exact format (no exceptions):
+ACTION_BLOCK:{"type":"calendar","action":"delete","eventId":"<exact_event_id_from_calendar_context>","summary":"<event title>","start":"<event start time>"}
+
+Do not skip this. Find the event ID from the calendar context provided. Output the ACTION_BLOCK JSON on its own line at the very end.`;
   }
   if (intent === 'email') {
     return `SYSTEM REMINDER: The user just requested an email. You MUST end your response with an ACTION_BLOCK in this exact format (no exceptions):
@@ -162,6 +171,7 @@ ${recentConversations ? `## Recent Conversation Context\n${recentConversations}`
     const enforcementReminder = writeIntent ? buildEnforcementReminder(writeIntent) : null;
 
     // Build final messages array — inject enforcement as extra user message if needed
+    // For delete intent, also note that calendar context will be in the system prompt from enrichWithGoogle
     const finalMessages = enforcementReminder
       ? [...messages, { role: 'user', content: enforcementReminder }]
       : messages;
