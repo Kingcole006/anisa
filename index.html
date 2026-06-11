@@ -1641,6 +1641,8 @@ const _origSendMessage = sendMessage;
 async function sendMessage() {
   const ta = document.getElementById('userInput');
   const val = ta.value.trim();
+
+  // Handle slash commands
   const handler = SLASH_COMMANDS[val];
   if (handler) {
     ta.value = '';
@@ -1650,10 +1652,14 @@ async function sendMessage() {
     return;
   }
 
-  // Also enrich with GitHub data if the message is about GitHub
-  if (val.toLowerCase().includes('github') || val.toLowerCase().includes('commit') || val.toLowerCase().includes('repo')) {
-    window._pendingGithubFetch = true;
+  // Inject attached file content if present
+  if (attachedFileContent && val) {
+    const fileMsg = '[ATTACHED FILE: ' + attachedFileName + ']\n\n' + attachedFileContent.slice(0, 8000) + (attachedFileContent.length > 8000 ? '\n\n[File truncated at 8000 chars]' : '');
+    ta.value = val + '\n\n' + fileMsg;
+    attachedFileContent = null;
+    attachedFileName = null;
   }
+
   await _origSendMessage();
 }
 
@@ -1895,23 +1901,6 @@ SLASH_COMMANDS['/jobs'] = () => enterJobMode();
 SLASH_COMMANDS['/dashboard'] = () => toggleDashboard();
 
 // ─── Patch sendMessage to inject file content and job mode context ───
-const _origSendMessageP3 = sendMessage;
-async function sendMessage() {
-  const ta = document.getElementById('userInput');
-  const input = ta.value.trim();
-
-  // If file attached, inject content into history before sending
-  if (attachedFileContent && input) {
-    const fileMsg = '[ATTACHED FILE: ' + attachedFileName + ']\n\n' + attachedFileContent.slice(0, 8000) + (attachedFileContent.length > 8000 ? '\n\n[File truncated at 8000 chars]' : '');
-    // Prepend file content as context to the message
-    ta.value = input + '\n\n' + fileMsg;
-    attachedFileContent = null;
-    attachedFileName = null;
-  }
-
-  await _origSendMessageP3();
-}
-
 // ─── Single unified SYSTEM getter — handles all modes ───
 const _baseSystem = SYSTEM;
 Object.defineProperty(window, 'SYSTEM', {
