@@ -52,6 +52,37 @@ function anthropicRequest(body, apiKey) {
   });
 }
 
+// Detect if the latest user message is requesting a write action
+function detectWriteIntent(messages) {
+  const last = messages[messages.length - 1];
+  if (!last || last.role !== 'user') return null;
+  const msg = last.content.toLowerCase();
+
+  const calendarTriggers = ['add to calendar', 'create event', 'schedule a', 'put on my calendar', 'add a', 'block time', 'remind me', 'set up a meeting', 'add pickleball', 'add a session', 'schedule me', 'create a'];
+  const emailTriggers = ['send an email', 'send email', 'email to', 'draft an email', 'draft email', 'write an email', 'shoot an email', 'send a message to', 'email my', 'send my'];
+
+  if (calendarTriggers.some(t => msg.includes(t))) return 'calendar';
+  if (emailTriggers.some(t => msg.includes(t))) return 'email';
+  return null;
+}
+
+// Build a strong enforcement reminder injected as the last user turn
+function buildEnforcementReminder(intent) {
+  if (intent === 'calendar') {
+    return `SYSTEM REMINDER: The user just requested a calendar event. You MUST end your response with an ACTION_BLOCK in this exact format (no exceptions):
+ACTION_BLOCK:{"type":"calendar","summary":"<title>","start":"<ISO datetime>","end":"<ISO datetime>","description":"<optional>","timeZone":"America/New_York"}
+
+Do not skip this. Do not say you will create it. Output the ACTION_BLOCK JSON on its own line at the very end.`;
+  }
+  if (intent === 'email') {
+    return `SYSTEM REMINDER: The user just requested an email. You MUST end your response with an ACTION_BLOCK in this exact format (no exceptions):
+ACTION_BLOCK:{"type":"email","action":"send","to":"<email>","subject":"<subject>","body":"<full body text>"}
+
+Do not skip this. Do not say you will send it. Output the ACTION_BLOCK JSON on its own line at the very end.`;
+  }
+  return null;
+}
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type',
@@ -91,28 +122,22 @@ exports.handler = async (event) => {
 
     if (SUPABASE_URL && SUPABASE_KEY) {
       try {
-        // Get all knowledge memories
         const memRes = await supabaseRequest(
           `${SUPABASE_URL}/rest/v1/memories?order=created_at.desc&limit=50`,
           'GET', SUPABASE_KEY
         );
         if (memRes.status === 200) {
           const mems = JSON.parse(memRes.body);
-          if (mems.length > 0) {
-            memorySummary = mems.map(m => m.content).join('\n');
-          }
+          if (mems.length > 0) memorySummary = mems.map(m => m.content).join('\n');
         }
 
-        // Get recent conversations (last 20 messages)
         const convRes = await supabaseRequest(
           `${SUPABASE_URL}/rest/v1/conversations?order=created_at.desc&limit=20`,
           'GET', SUPABASE_KEY
         );
         if (convRes.status === 200) {
           const convs = JSON.parse(convRes.body);
-          if (convs.length > 0) {
-            recentConversations = convs.reverse().map(c => `${c.role}: ${c.content}`).join('\n');
-          }
+          if (convs.length > 0) recentConversations = convs.reverse().map(c => `${c.role}: ${c.content}`).join('\n');
         }
       } catch (e) {
         console.log('Memory fetch error:', e.message);
@@ -128,16 +153,28 @@ ${memorySummary || 'No memories stored yet.'}
 ${recentConversations ? `## Recent Conversation Context\n${recentConversations}` : ''}
 
 ## Memory Instructions
-- If Cole says "remember that..." or "don't forget..." → acknowledge and the system will save it
-- If Cole asks "what do you remember?" → summarize the memories above
+- If Cole says "remember that..." or "don't forget..." acknowledge and the system will save it
+- If Cole asks "what do you remember?" summarize the memories above
 - Use memories naturally in conversation without announcing them`;
+
+    // Detect write intent and inject enforcement reminder as a system turn
+    const writeIntent = detectWriteIntent(messages);
+    const enforcementReminder = writeIntent ? buildEnforcementReminder(writeIntent) : null;
+
+    // Build final messages array — inject enforcement as extra user message if needed
+    const finalMessages = enforcementReminder
+      ? [...messages, { role: 'user', content: enforcementReminder }]
+      : messages;
+
+    // Bump max_tokens for write actions so there's room for the ACTION_BLOCK
+    const finalMaxTokens = writeIntent ? Math.max(max_tokens || 1000, 600) : (max_tokens || 1000);
 
     // Call Anthropic
     const response = await anthropicRequest({
       model: model || 'claude-haiku-4-5-20251001',
-      max_tokens: max_tokens || 1000,
+      max_tokens: finalMaxTokens,
       system: enrichedSystem,
-      messages
+      messages: finalMessages
     }, ANTHROPIC_KEY);
 
     // Save conversation to Supabase
@@ -147,21 +184,18 @@ ${recentConversations ? `## Recent Conversation Context\n${recentConversations}`
         const responseData = JSON.parse(response.body);
         const assistantMsg = responseData.content?.[0]?.text || '';
 
-        // Save user message
         await supabaseRequest(
           `${SUPABASE_URL}/rest/v1/conversations`,
           'POST', SUPABASE_KEY,
           { role: 'user', content: lastUserMsg.content }
         );
 
-        // Save assistant message
         await supabaseRequest(
           `${SUPABASE_URL}/rest/v1/conversations`,
           'POST', SUPABASE_KEY,
           { role: 'assistant', content: assistantMsg }
         );
 
-        // Auto-detect memory saves ("remember that...")
         const userText = lastUserMsg.content.toLowerCase();
         if (userText.includes('remember that') || userText.includes('remember,') || userText.includes("don't forget")) {
           await supabaseRequest(
