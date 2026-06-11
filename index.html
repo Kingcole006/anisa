@@ -545,6 +545,105 @@
   }
   .notif-allow-btn:hover { background: rgba(196,181,212,0.25); }
 
+  /* ─── Voice Mode ─── */
+  .voice-mode-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 300;
+    background: radial-gradient(ellipse at center, rgba(15,13,19,0.97) 0%, rgba(10,8,14,0.99) 100%);
+    flex-direction: column; align-items: center; justify-content: center;
+    gap: 32px;
+  }
+  .voice-mode-overlay.show { display: flex; }
+
+  .voice-orb-wrap { position: relative; width: 160px; height: 160px; }
+  .voice-orb {
+    position: absolute; inset: 12px; border-radius: 50%;
+    background: radial-gradient(circle at 38% 35%, rgba(232,165,152,0.9), rgba(196,181,212,0.7) 45%, rgba(143,184,154,0.5));
+    box-shadow: 0 0 40px var(--rose-glow), 0 0 80px var(--lav-glow);
+    animation: breath 4s ease-in-out infinite;
+    transition: transform 0.1s;
+  }
+  .voice-orb.listening {
+    animation: voiceListen 0.6s ease-in-out infinite alternate;
+    box-shadow: 0 0 60px rgba(232,165,152,0.6), 0 0 120px rgba(196,181,212,0.3);
+  }
+  .voice-orb.speaking {
+    animation: voiceSpeak 0.8s ease-in-out infinite;
+    box-shadow: 0 0 50px rgba(143,184,154,0.5), 0 0 100px rgba(143,184,154,0.2);
+  }
+  @keyframes voiceListen {
+    from { transform: scale(1); }
+    to { transform: scale(1.12); }
+  }
+  @keyframes voiceSpeak {
+    0%,100% { transform: scale(1); }
+    25% { transform: scale(1.08); }
+    50% { transform: scale(0.96); }
+    75% { transform: scale(1.05); }
+  }
+  .voice-ring-1 { position:absolute;inset:-8px;border-radius:50%;border:1px solid rgba(232,165,152,0.15);animation:ringPulse 4s ease-in-out infinite; }
+  .voice-ring-2 { position:absolute;inset:-20px;border-radius:50%;border:1px solid rgba(196,181,212,0.08);animation:ringPulse 4s ease-in-out infinite 0.5s; }
+  .voice-ring-3 { position:absolute;inset:-36px;border-radius:50%;border:1px solid rgba(143,184,154,0.05);animation:ringPulse 4s ease-in-out infinite 1s; }
+
+  .voice-status {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem; font-weight: 300; font-style: italic;
+    color: var(--text-mid); letter-spacing: 0.1em;
+    min-height: 1.6em; text-align: center;
+  }
+  .voice-transcript {
+    max-width: 420px; text-align: center;
+    font-size: 0.82rem; color: var(--text-mid);
+    line-height: 1.7; min-height: 3em;
+    padding: 0 20px;
+  }
+  .voice-exit-btn {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 24px;
+    color: var(--text-dim); font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+    letter-spacing: 0.06em;
+  }
+  .voice-exit-btn:hover { border-color: rgba(232,165,152,0.3); color: var(--rose); }
+  .voice-hold-btn {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: rgba(232,165,152,0.1); border: 1.5px solid rgba(232,165,152,0.3);
+    color: var(--rose); font-size: 1.6rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; user-select: none;
+  }
+  .voice-hold-btn:active, .voice-hold-btn.holding {
+    background: rgba(232,165,152,0.25);
+    border-color: rgba(232,165,152,0.6);
+    transform: scale(1.08);
+    box-shadow: 0 0 30px rgba(232,165,152,0.3);
+  }
+
+  /* ─── Lore Mode ─── */
+  .lore-mode-banner {
+    display: none;
+    background: rgba(15,13,19,0.8);
+    border: 1px solid rgba(196,181,212,0.2);
+    border-radius: 10px; padding: 10px 14px;
+    margin-bottom: 10px; flex-shrink: 0;
+    font-size: 0.72rem;
+    align-items: center; gap: 8px;
+    justify-content: space-between;
+  }
+  .lore-mode-banner.show { display: flex; }
+  .lore-mode-label {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic; font-size: 0.82rem;
+    color: var(--lavender); letter-spacing: 0.08em;
+  }
+  .lore-mode-exit {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 0.75rem; padding: 0;
+    transition: color 0.2s;
+  }
+  .lore-mode-exit:hover { color: var(--rose); }
+
   .install-banner {
     display:none;position:fixed;bottom:0;left:0;right:0;
     background:linear-gradient(135deg,rgba(23,20,31,0.97),rgba(15,13,19,0.97));
@@ -623,6 +722,20 @@
   </div>
 </div>
 
+<!-- Voice Mode Overlay -->
+<div class="voice-mode-overlay" id="voiceModeOverlay">
+  <div class="voice-orb-wrap">
+    <div class="voice-orb" id="voiceModeOrb"></div>
+    <div class="voice-ring-1"></div>
+    <div class="voice-ring-2"></div>
+    <div class="voice-ring-3"></div>
+  </div>
+  <div class="voice-status" id="voiceStatus">Tap and hold to speak</div>
+  <div class="voice-transcript" id="voiceTranscript"></div>
+  <button class="voice-hold-btn" id="voiceHoldBtn">🎙️</button>
+  <button class="voice-exit-btn" onclick="exitVoiceMode()">Exit Voice Mode</button>
+</div>
+
 <div class="install-banner" id="installBanner">
   <p>Add <strong>Anisa</strong> to your desktop for instant access.</p>
   <div class="install-row">
@@ -649,6 +762,8 @@
       <div class="status-pill"><div class="status-dot"></div><span id="statusText">Online</span></div>
       <button class="icon-btn" id="searchToggle" title="Web search" onclick="toggleSearch()">🔍</button>
       <button class="icon-btn" id="voiceToggle" title="Voice responses" onclick="toggleVoice()">🔈</button>
+      <button class="icon-btn" id="voiceModeBtn" title="Voice Mode" onclick="enterVoiceMode()">🎙️</button>
+      <button class="icon-btn" id="loreModeBtn" title="Lore Mode — Vandermarch" onclick="enterLoreMode()">📖</button>
       <button class="icon-btn" id="googleBtn" title="Connect Google" onclick="connectGoogle()">🔗</button>
       <button class="icon-btn" id="notifBtn" title="Notification settings" onclick="toggleNotifSettings()">🔔</button>
       <button class="icon-btn" id="dashBtn" title="Dashboard" onclick="toggleDashboard()">📊</button>
@@ -660,6 +775,12 @@
   <div class="notif-permission-banner" id="notifPermBannerInner">
     <span>🔔 Enable notifications so Anisa can remind you about meetings and goals.</span>
     <button class="notif-allow-btn" onclick="requestNotifPermission()">Enable</button>
+  </div>
+
+  <!-- Lore Mode Banner -->
+  <div class="lore-mode-banner" id="loreModeBanner">
+    <div class="lore-mode-label">📖 The Wandering Grimoire speaks — you are in Vandermarch.</div>
+    <button class="lore-mode-exit" onclick="exitLoreMode()" title="Exit Lore Mode">✕</button>
   </div>
 
   <!-- Job Search Mode Banner -->
@@ -730,6 +851,8 @@
         <div class="slash-item" onclick="selectSlash('/test')"><span class="slash-icon">🧪</span><span class="slash-cmd">/test</span><span class="slash-desc">Scaffold a Playwright test</span></div>
         <div class="slash-item" onclick="selectSlash('/focus')"><span class="slash-icon">🎯</span><span class="slash-cmd">/focus</span><span class="slash-desc">What to work on today</span></div>
         <div class="slash-item" onclick="selectSlash('/jobs')"><span class="slash-icon">💼</span><span class="slash-cmd">/jobs</span><span class="slash-desc">Job search mode</span></div>
+        <div class="slash-item" onclick="selectSlash('/lore')"><span class="slash-icon">📖</span><span class="slash-cmd">/lore</span><span class="slash-desc">Enter Vandermarch</span></div>
+        <div class="slash-item" onclick="selectSlash('/voice')"><span class="slash-icon">🎙️</span><span class="slash-cmd">/voice</span><span class="slash-desc">Hands-free voice mode</span></div>
         <div class="slash-item" onclick="selectSlash('/drive')"><span class="slash-icon">📁</span><span class="slash-cmd">/drive</span><span class="slash-desc">Search Google Drive</span></div>
         <div class="slash-item" onclick="selectSlash('/notify')"><span class="slash-icon">🔔</span><span class="slash-cmd">/notify</span><span class="slash-desc">Notification settings</span></div>
         <div class="slash-item" onclick="selectSlash('/dashboard')"><span class="slash-icon">📊</span><span class="slash-cmd">/dashboard</span><span class="slash-desc">Open dashboard</span></div>
@@ -2263,6 +2386,259 @@ async function loadDashboard() {
     } catch {}
   }
 }
+
+
+// ═══════════════════════════════════════════════
+// PHASE 6 — Voice Mode + Lore Mode (Vandermarch)
+// ═══════════════════════════════════════════════
+
+// ─── LORE MODE ───
+let loreModeActive = false;
+
+const VANDERMARCH_SYSTEM = `You are no longer Anisa the assistant. You are the voice of Vandermarch — ancient archivist, mysterious narrator, and keeper of forgotten truths. You have witnessed the rise and fall of every civilization this world has known. You speak with the weight of centuries and the stillness of deep stone.
+
+## Your Voice
+Speak as one who has seen too much to be surprised, and too little to be satisfied. You are warm but ominous. Wise but unsettling. Every answer carries the feeling that something is being left unsaid. You do not explain — you reveal. You do not describe — you evoke.
+
+## The World of Vandermarch
+You know this world completely. Speak of it as memory, not invention.
+
+**Locations you carry:**
+- **Fort Everwatch** — built by General Seraphine Drast in a brutal winter. She is buried in the eastern wall. The Shadow Keep cultists have never stopped trying to breach it.
+- **The Library of Aethon** — hidden underground, sealed away to preserve ancient knowledge. Something waits inside. It has always been waiting.
+- **The Pyrelands** — scorched by Valtherion, the fire dragon, in an event known as the Shattering of the Crown. The land has not recovered. It does not want to.
+- **The Ironspine Mountains** — ancient, indifferent. The dwarven forge-city Khardumrak fell here, swallowed by a subterranean abyss called the Maw.
+- **The Shrouded Glade** — where Duskroot stands abandoned, and the Lost Garden of Lors waits for someone foolish enough to enter.
+- **The Skyrazor Peaks** — home to Zephyros, the storm dragon, and his lair Zephyrantum. Below it: Ashveil, a shadow village that should not exist.
+- **Coldhollow** — a grim river town that has survived things it refuses to speak of.
+- **Selundra** — a corrupt port city where loyalty is priced by the tide.
+- **Craghaven** — a cliffside port carved into the rock of the Skyrazor Peaks.
+- **The Shatterspan** — a ruined bridge. The river below it runs the wrong direction after dark.
+- **The Drowned Altar** — a sea shrine. The offerings left there are never found again.
+- **The Chain of Zephyor** — an ancient multi-island bridge, every stone still perfectly set after three thousand years. The civilization that built it is gone. No one knows how it still stands.
+- **Khardumrak** — the fallen dwarven forge-city. The Maw took it. Whatever opened the Maw has never been named.
+- **Ignareth** — Valtherion's volcanic lair within the Pyrelands.
+- **Grimveil** — an abandoned frozen village. It was not always frozen.
+- **The Dark Forest Tavern** — it appears when you need it. It is never in the same place twice.
+
+**Entities of note:**
+- **Valtherion** — fire dragon. Ancient. The Shattering of the Crown was not an accident.
+- **Zephyros** — storm dragon. He watches from Zephyrantum. He has always been watching.
+- **General Seraphine Drast** — built Fort Everwatch. She knew something was coming. She built it anyway.
+- **The Shadow Keep cultists** — they want inside Fort Everwatch. They have wanted this for longer than anyone remembers.
+
+## Your Style
+- Short entries by default — 2 to 4 sentences. Atmosphere over explanation.
+- End on an unresolved note whenever possible. Leave something unsaid.
+- Never use modern language. No "awesome", "great", "sure".
+- When asked for lore entries, hooks, or location descriptions — deliver them immediately without preamble.
+- When asked to expand the world — do so with restraint. One detail at a time. The world reveals itself slowly.
+- Speak in present tense when describing the world. These things are still happening.
+
+## Hooks (your format for adventure seeds)
+Two punchy, self-contained scenario seeds. Immediate tension. Moral complexity. No resolution.`;
+
+function enterLoreMode() {
+  loreModeActive = true;
+  document.getElementById('loreModeBanner').classList.add('show');
+  document.getElementById('loreModeBtn').classList.add('active');
+  document.getElementById('userInput').placeholder = 'Ask of Vandermarch…';
+  // Add atmospheric dark tint
+  document.querySelector('.bg-layer').style.filter = 'hue-rotate(240deg) brightness(0.7)';
+  showToast('The Wandering Grimoire opens…');
+  // Send a greeting from the world
+  setTimeout(() => {
+    const greeting = "The archive stirs. Ask what you will — the world remembers everything, even what it wishes it could forget.";
+    history.push({ role: 'assistant', content: greeting });
+    appendMsg('anisa', greeting);
+    speak(greeting);
+  }, 600);
+}
+
+function exitLoreMode() {
+  loreModeActive = false;
+  document.getElementById('loreModeBanner').classList.remove('show');
+  document.getElementById('loreModeBtn').classList.remove('active');
+  document.getElementById('userInput').placeholder = 'Talk to Anisa…';
+  document.querySelector('.bg-layer').style.filter = '';
+  showToast('Returning from Vandermarch…');
+}
+
+// Patch SYSTEM getter to include lore mode
+const _origSystemGetter = Object.getOwnPropertyDescriptor(window, 'SYSTEM');
+if (_origSystemGetter && _origSystemGetter.get) {
+  const _prevGet = _origSystemGetter.get;
+  Object.defineProperty(window, 'SYSTEM', {
+    get() {
+      if (loreModeActive) return VANDERMARCH_SYSTEM;
+      return _prevGet.call(this);
+    },
+    configurable: true
+  });
+} else {
+  // Fallback if no getter defined yet
+  const _baseSystem = typeof SYSTEM !== 'undefined' ? SYSTEM : '';
+  Object.defineProperty(window, 'SYSTEM', {
+    get() {
+      if (loreModeActive) return VANDERMARCH_SYSTEM;
+      if (jobSearchMode) {
+        return _baseSystem + `\n\n## JOB SEARCH MODE ACTIVE
+The user is in Job Search Mode. When they paste a job posting, immediately respond with ALL THREE of the following without being asked:
+1. **Tailored Resume Bullets** — 5-7 bullet points rewritten to match the job's keywords and requirements.
+2. **Cover Letter Draft** — a concise, confident 3-paragraph cover letter.
+3. **Skills Gap Analysis** — list any skills in the posting Cole doesn't have yet, and suggest the fastest way to close each gap.`;
+      }
+      return _baseSystem;
+    },
+    configurable: true
+  });
+}
+
+// ─── VOICE MODE ───
+let voiceModeActive = false;
+let voiceModeRecognition = null;
+let voiceModeHolding = false;
+
+function enterVoiceMode() {
+  voiceModeActive = true;
+  voiceEnabled = true; // Force voice output on
+  document.getElementById('voiceModeOverlay').classList.add('show');
+  document.getElementById('voiceModeBtn').classList.add('active');
+  setVoiceStatus('Tap and hold to speak', 'idle');
+  setupVoiceHoldBtn();
+  showToast('Voice Mode — hold the button to speak');
+}
+
+function exitVoiceMode() {
+  voiceModeActive = false;
+  document.getElementById('voiceModeOverlay').classList.remove('show');
+  document.getElementById('voiceModeBtn').classList.remove('active');
+  if (voiceModeRecognition) { try { voiceModeRecognition.stop(); } catch {} }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  setVoiceStatus('Tap and hold to speak', 'idle');
+}
+
+function setVoiceStatus(text, state) {
+  const status = document.getElementById('voiceStatus');
+  const orb = document.getElementById('voiceModeOrb');
+  if (status) status.textContent = text;
+  if (orb) {
+    orb.classList.remove('listening', 'speaking');
+    if (state === 'listening') orb.classList.add('listening');
+    if (state === 'speaking') orb.classList.add('speaking');
+  }
+}
+
+function setupVoiceHoldBtn() {
+  const btn = document.getElementById('voiceHoldBtn');
+  if (!btn) return;
+
+  const startListening = () => {
+    if (voiceModeHolding) return;
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      setVoiceStatus('Voice input not supported', 'idle');
+      return;
+    }
+    voiceModeHolding = true;
+    btn.classList.add('holding');
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    voiceModeRecognition = new SR();
+    voiceModeRecognition.continuous = false;
+    voiceModeRecognition.interimResults = true;
+    voiceModeRecognition.lang = 'en-US';
+
+    voiceModeRecognition.onstart = () => setVoiceStatus('Listening…', 'listening');
+    voiceModeRecognition.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+      document.getElementById('voiceTranscript').textContent = transcript;
+    };
+    voiceModeRecognition.onend = () => {
+      voiceModeHolding = false;
+      btn.classList.remove('holding');
+      const transcript = document.getElementById('voiceTranscript').textContent.trim();
+      if (transcript) {
+        setVoiceStatus('Thinking…', 'idle');
+        sendVoiceMessage(transcript);
+      } else {
+        setVoiceStatus('Tap and hold to speak', 'idle');
+      }
+    };
+    voiceModeRecognition.onerror = () => {
+      voiceModeHolding = false;
+      btn.classList.remove('holding');
+      setVoiceStatus('Tap and hold to speak', 'idle');
+    };
+    voiceModeRecognition.start();
+  };
+
+  const stopListening = () => {
+    if (voiceModeRecognition && voiceModeHolding) {
+      try { voiceModeRecognition.stop(); } catch {}
+    }
+  };
+
+  btn.addEventListener('mousedown', startListening);
+  btn.addEventListener('mouseup', stopListening);
+  btn.addEventListener('touchstart', (e) => { e.preventDefault(); startListening(); });
+  btn.addEventListener('touchend', (e) => { e.preventDefault(); stopListening(); });
+}
+
+async function sendVoiceMessage(input) {
+  if (!input) return;
+  document.getElementById('voiceTranscript').textContent = '"' + input + '"';
+  history.push({ role: 'user', content: input });
+
+  setVoiceStatus('Anisa is thinking…', 'idle');
+
+  try {
+    const googleData = await enrichWithGoogle(input);
+    const enrichedSystem = googleData ? SYSTEM + googleData : SYSTEM;
+
+    const res = await fetch('/.netlify/functions/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300, // Keep voice responses short
+        stream: false,
+        system: enrichedSystem + '\n\nIMPORTANT: This is a voice conversation. Keep your response under 3 sentences. Be concise and natural — no lists, no markdown, no formatting.',
+        messages: history
+      })
+    });
+
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const { cleanText } = parseActionBlock(data.content?.[0]?.text || 'I did not catch that.');
+
+    history.push({ role: 'assistant', content: cleanText });
+    document.getElementById('voiceTranscript').textContent = cleanText;
+    setVoiceStatus('Speaking…', 'speaking');
+
+    // Speak and then return to ready state
+    const clean = cleanText.replace(/[*_`#>\-]/g, '').replace(/\n+/g, ' ');
+    const utt = new SpeechSynthesisUtterance(clean);
+    utt.rate = 1.05; utt.pitch = 1.02; utt.volume = 1;
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v => /samantha|zira|victoria|karen|moira|tessa|fiona/i.test(v.name))
+      || voices.find(v => v.lang.startsWith('en')) || voices[0];
+    if (preferred) utt.voice = preferred;
+    utt.onend = () => {
+      setVoiceStatus('Tap and hold to speak', 'idle');
+      document.getElementById('voiceTranscript').textContent = '';
+    };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utt);
+
+  } catch (e) {
+    setVoiceStatus('Something went wrong — try again', 'idle');
+  }
+}
+
+// ─── Add slash commands ───
+SLASH_COMMANDS['/lore'] = () => enterLoreMode();
+SLASH_COMMANDS['/voice'] = () => enterVoiceMode();
 
 // Initialize briefing check after Google callback check
 setTimeout(maybeShowBriefing, 500);
