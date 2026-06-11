@@ -1912,12 +1912,13 @@ async function sendMessage() {
   await _origSendMessageP3();
 }
 
-// ─── Patch system prompt for job search mode ───
-const _origSystem = SYSTEM;
+// ─── Single unified SYSTEM getter — handles all modes ───
+const _baseSystem = SYSTEM;
 Object.defineProperty(window, 'SYSTEM', {
   get() {
+    if (loreModeActive) return VANDERMARCH_SYSTEM;
     if (jobSearchMode) {
-      return _origSystem + `\n\n## JOB SEARCH MODE ACTIVE
+      return _baseSystem + `\n\n## JOB SEARCH MODE ACTIVE
 The user is in Job Search Mode. When they paste a job posting, immediately respond with ALL THREE of the following without being asked:
 
 1. **Tailored Resume Bullets** — 5-7 bullet points rewritten to match the job's keywords and requirements, drawing from Cole's QA Automation background.
@@ -1926,8 +1927,9 @@ The user is in Job Search Mode. When they paste a job posting, immediately respo
 
 Be direct and specific. Use the actual job title and company name if provided.`;
     }
-    return _origSystem;
-  }
+    return _baseSystem;
+  },
+  configurable: true
 });
 
 // Drag and drop on chat window
@@ -2462,36 +2464,6 @@ function exitLoreMode() {
   document.getElementById('userInput').placeholder = 'Talk to Anisa…';
   document.querySelector('.bg-layer').style.filter = '';
   showToast('Returning from Vandermarch…');
-}
-
-// Patch SYSTEM getter to include lore mode
-const _origSystemGetter = Object.getOwnPropertyDescriptor(window, 'SYSTEM');
-if (_origSystemGetter && _origSystemGetter.get) {
-  const _prevGet = _origSystemGetter.get;
-  Object.defineProperty(window, 'SYSTEM', {
-    get() {
-      if (loreModeActive) return VANDERMARCH_SYSTEM;
-      return _prevGet.call(this);
-    },
-    configurable: true
-  });
-} else {
-  // Fallback if no getter defined yet
-  const _baseSystem = typeof SYSTEM !== 'undefined' ? SYSTEM : '';
-  Object.defineProperty(window, 'SYSTEM', {
-    get() {
-      if (loreModeActive) return VANDERMARCH_SYSTEM;
-      if (jobSearchMode) {
-        return _baseSystem + `\n\n## JOB SEARCH MODE ACTIVE
-The user is in Job Search Mode. When they paste a job posting, immediately respond with ALL THREE of the following without being asked:
-1. **Tailored Resume Bullets** — 5-7 bullet points rewritten to match the job's keywords and requirements.
-2. **Cover Letter Draft** — a concise, confident 3-paragraph cover letter.
-3. **Skills Gap Analysis** — list any skills in the posting Cole doesn't have yet, and suggest the fastest way to close each gap.`;
-      }
-      return _baseSystem;
-    },
-    configurable: true
-  });
 }
 
 // ─── VOICE MODE ───
