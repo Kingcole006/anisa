@@ -78,10 +78,15 @@ ACTION_BLOCK:{"type":"calendar","action":"create","summary":"<title>","start":"<
 Do not skip this. Do not say you will create it. Output the ACTION_BLOCK JSON on its own line at the very end.`;
   }
   if (intent === 'calendar_delete') {
-    return `SYSTEM REMINDER: The user wants to DELETE a calendar event. You will receive calendar data in context. Find the matching event, then you MUST end your response with an ACTION_BLOCK in this exact format (no exceptions):
-ACTION_BLOCK:{"type":"calendar","action":"delete","eventId":"<exact_event_id_from_calendar_context>","summary":"<event title>","start":"<event start time>"}
+    return `SYSTEM REMINDER: The user wants to DELETE a calendar event. The calendar context above contains real events with real IDs in this format: "- Event Name at Date/Time [ID: actual_google_id_here]"
 
-Do not skip this. Find the event ID from the calendar context provided. Output the ACTION_BLOCK JSON on its own line at the very end.`;
+You MUST:
+1. Find the matching event in the [CALENDAR] section above
+2. Copy the EXACT ID from inside the [ID: ...] brackets — do NOT make up an ID
+3. End your response with this ACTION_BLOCK using the REAL ID:
+ACTION_BLOCK:{"type":"calendar","action":"delete","eventId":"<EXACT_ID_FROM_CALENDAR_CONTEXT>","summary":"<event title>","start":"<event start time>"}
+
+CRITICAL: The eventId MUST be the real Google Calendar ID from the context. It will look like random letters and numbers, NOT a human-readable string like "dinner-at-home-2026-06-11". If you cannot find the event ID in the calendar context, say so instead of making one up.`;
   }
   if (intent === 'email') {
     return `SYSTEM REMINDER: The user just requested an email. You MUST end your response with an ACTION_BLOCK in this exact format (no exceptions):
