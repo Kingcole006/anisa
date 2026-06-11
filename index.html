@@ -342,6 +342,143 @@
   .slash-cmd { color: var(--rose); font-weight: 500; letter-spacing: 0.03em; }
   .slash-desc { color: var(--text-dim); font-size: 0.68rem; margin-left: auto; }
 
+  /* ─── Dashboard Panel ─── */
+  .dashboard-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 150;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+  }
+  .dashboard-overlay.show { display: block; }
+
+  .dashboard-panel {
+    position: fixed; top: 0; right: -380px; bottom: 0;
+    width: 360px; z-index: 160;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+    overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent;
+  }
+  .dashboard-panel.show { right: 0; }
+
+  /* Mobile: full overlay */
+  @media (max-width: 600px) {
+    .dashboard-panel { width: 100%; right: -100%; }
+    .dashboard-panel.show { right: 0; }
+  }
+
+  .dash-header {
+    padding: 20px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .dash-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem; font-weight: 300; letter-spacing: 0.1em;
+    color: var(--text); font-style: italic;
+  }
+  .dash-close {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 1rem; padding: 4px;
+    transition: color 0.2s; line-height: 1;
+  }
+  .dash-close:hover { color: var(--rose); }
+
+  .dash-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  .dash-section {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .dash-section-title {
+    font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 10px; font-weight: 500;
+  }
+  .dash-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .dash-stat {
+    background: rgba(255,255,255,0.025); border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .dash-stat-val {
+    font-size: 1.4rem; font-weight: 300;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--text); line-height: 1;
+  }
+  .dash-stat-label { font-size: 0.6rem; color: var(--text-dim); margin-top: 3px; letter-spacing: 0.08em; }
+  .dash-stat.rose .dash-stat-val { color: var(--rose); }
+  .dash-stat.sage .dash-stat-val { color: var(--sage); }
+  .dash-stat.lav .dash-stat-val { color: var(--lavender); }
+
+  .dash-event-list { display: flex; flex-direction: column; gap: 6px; }
+  .dash-event {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.74rem; color: var(--text-mid);
+  }
+  .dash-event-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sage); flex-shrink: 0; }
+  .dash-event-time { font-size: 0.62rem; color: var(--text-dim); min-width: 52px; }
+
+  .dash-progress-bar {
+    height: 4px; background: rgba(255,255,255,0.06);
+    border-radius: 2px; overflow: hidden; margin-top: 6px;
+  }
+  .dash-progress-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--rose), var(--lavender));
+    transition: width 0.6s ease;
+  }
+  .dash-progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 0.62rem; color: var(--text-dim); margin-top: 4px;
+  }
+
+  .dash-quick-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+  .dash-quick-btn {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px;
+    color: var(--text-mid); font-family: 'DM Sans', sans-serif;
+    font-size: 0.68rem; cursor: pointer; transition: all 0.2s;
+    text-align: left;
+  }
+  .dash-quick-btn:hover { background: rgba(232,165,152,0.08); border-color: rgba(232,165,152,0.2); color: var(--rose); }
+
+  /* ─── File Upload Drop Zone ─── */
+  .drop-zone {
+    border: 1.5px dashed var(--border); border-radius: 10px;
+    padding: 14px 16px; text-align: center;
+    font-size: 0.72rem; color: var(--text-dim);
+    cursor: pointer; transition: all 0.2s;
+    margin-top: 6px;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: rgba(232,165,152,0.35);
+    background: rgba(232,165,152,0.04);
+    color: var(--text-mid);
+  }
+  .drop-zone input[type=file] { display: none; }
+
+  /* ─── Job Search Mode ─── */
+  .job-mode-banner {
+    display: none;
+    background: rgba(196,181,212,0.06);
+    border: 1px solid rgba(196,181,212,0.18);
+    border-radius: 10px; padding: 10px 14px;
+    margin-bottom: 10px; flex-shrink: 0;
+    font-size: 0.72rem; color: var(--lavender);
+    display: none; align-items: center; gap: 8px;
+    justify-content: space-between;
+  }
+  .job-mode-banner.show { display: flex; }
+  .job-mode-label { display: flex; align-items: center; gap: 6px; }
+  .job-mode-exit {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 0.75rem; padding: 0;
+    transition: color 0.2s;
+  }
+  .job-mode-exit:hover { color: var(--rose); }
+
   .install-banner {
     display:none;position:fixed;bottom:0;left:0;right:0;
     background:linear-gradient(135deg,rgba(23,20,31,0.97),rgba(15,13,19,0.97));
@@ -376,6 +513,23 @@
 <div class="orb orb-2"></div>
 <div class="orb orb-3"></div>
 
+<!-- Dashboard overlay (mobile backdrop) -->
+<div class="dashboard-overlay" id="dashOverlay" onclick="closeDashboard()"></div>
+
+<!-- Dashboard Panel -->
+<div class="dashboard-panel" id="dashPanel">
+  <div class="dash-header">
+    <div class="dash-title">Dashboard</div>
+    <button class="dash-close" onclick="closeDashboard()">✕</button>
+  </div>
+  <div class="dash-body" id="dashBody">
+    <div style="font-size:0.72rem;color:var(--text-dim);text-align:center;padding:20px 0;">
+      <div class="briefing-loading"><div class="briefing-spinner" style="margin:0 auto 8px;"></div></div>
+      Loading dashboard…
+    </div>
+  </div>
+</div>
+
 <div class="install-banner" id="installBanner">
   <p>Add <strong>Anisa</strong> to your desktop for instant access.</p>
   <div class="install-row">
@@ -403,9 +557,16 @@
       <button class="icon-btn" id="searchToggle" title="Web search" onclick="toggleSearch()">🔍</button>
       <button class="icon-btn" id="voiceToggle" title="Voice responses" onclick="toggleVoice()">🔈</button>
       <button class="icon-btn" id="googleBtn" title="Connect Google" onclick="connectGoogle()">🔗</button>
+      <button class="icon-btn" id="dashBtn" title="Dashboard" onclick="toggleDashboard()">📊</button>
       <button class="icon-btn" title="Clear chat" onclick="clearChat()">🗑</button>
     </div>
   </header>
+
+  <!-- Job Search Mode Banner -->
+  <div class="job-mode-banner" id="jobModeBanner">
+    <div class="job-mode-label">💼 <strong style="color:var(--lavender)">Job Search Mode</strong> — paste a job posting and I'll tailor your resume, write a cover letter, and flag skill gaps.</div>
+    <button class="job-mode-exit" onclick="exitJobMode()" title="Exit job search mode">✕</button>
+  </div>
 
   <!-- Daily Briefing Banner -->
   <div class="briefing-banner" id="briefingBanner">
@@ -468,10 +629,15 @@
         <div class="slash-item" onclick="selectSlash('/resume')"><span class="slash-icon">📄</span><span class="slash-cmd">/resume</span><span class="slash-desc">Resume bullet points</span></div>
         <div class="slash-item" onclick="selectSlash('/test')"><span class="slash-icon">🧪</span><span class="slash-cmd">/test</span><span class="slash-desc">Scaffold a Playwright test</span></div>
         <div class="slash-item" onclick="selectSlash('/focus')"><span class="slash-icon">🎯</span><span class="slash-cmd">/focus</span><span class="slash-desc">What to work on today</span></div>
+        <div class="slash-item" onclick="selectSlash('/jobs')"><span class="slash-icon">💼</span><span class="slash-cmd">/jobs</span><span class="slash-desc">Job search mode</span></div>
+        <div class="slash-item" onclick="selectSlash('/dashboard')"><span class="slash-icon">📊</span><span class="slash-cmd">/dashboard</span><span class="slash-desc">Open dashboard</span></div>
       </div>
       <div class="input-shell">
       <textarea id="userInput" placeholder="Talk to Anisa…" rows="1"></textarea>
       <div class="input-btns">
+        <label class="mic-btn" title="Attach file" style="cursor:pointer;display:flex;align-items:center;justify-content:center;">
+          📎<input type="file" id="fileInput" accept=".txt,.md,.pdf,.js,.ts,.json,.csv,.html,.css,.py" style="display:none;" onchange="handleFileUpload(event)">
+        </label>
         <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Voice input">🎙️</button>
         <button class="send-btn" id="sendBtn" onclick="sendMessage()">↑</button>
       </div>
@@ -1277,6 +1443,250 @@ async function enrichWithGoogle(userMessage) {
   }
   return data;
 }
+
+
+// ═══════════════════════════════════════════════
+// PHASE 3 — Dashboard, File Upload, Job Search Mode
+// ═══════════════════════════════════════════════
+
+// ─── Dashboard ───
+let dashLoaded = false;
+
+function toggleDashboard() {
+  const panel = document.getElementById('dashPanel');
+  const overlay = document.getElementById('dashOverlay');
+  const isOpen = panel.classList.contains('show');
+  if (isOpen) {
+    closeDashboard();
+  } else {
+    panel.classList.add('show');
+    overlay.classList.add('show');
+    document.getElementById('dashBtn').classList.add('active');
+    if (!dashLoaded) loadDashboard();
+  }
+}
+
+function closeDashboard() {
+  document.getElementById('dashPanel').classList.remove('show');
+  document.getElementById('dashOverlay').classList.remove('show');
+  document.getElementById('dashBtn').classList.remove('active');
+}
+
+async function loadDashboard() {
+  dashLoaded = true;
+  const body = document.getElementById('dashBody');
+
+  // Fetch all data in parallel
+  const [calRes, mailRes, ghData] = await Promise.all([
+    googleToken ? getCalendar() : Promise.resolve(null),
+    googleToken ? getEmails() : Promise.resolve(null),
+    fetchGitHub()
+  ]);
+
+  // ── Career Stats ──
+  const careerHTML = `
+    <div class="dash-section">
+      <div class="dash-section-title">Career Progress</div>
+      <div class="dash-stat-grid">
+        <div class="dash-stat rose">
+          <div class="dash-stat-val">10</div>
+          <div class="dash-stat-label">Weeks Training</div>
+        </div>
+        <div class="dash-stat sage">
+          <div class="dash-stat-val">110+</div>
+          <div class="dash-stat-label">Automated Tests</div>
+        </div>
+        <div class="dash-stat lav">
+          <div class="dash-stat-val">100%</div>
+          <div class="dash-stat-label">Pass Rate</div>
+        </div>
+        <div class="dash-stat">
+          <div class="dash-stat-val">7.2k</div>
+          <div class="dash-stat-label">Lines of Code</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <div style="font-size:0.62rem;color:var(--text-dim);margin-bottom:4px;">Job Search Progress</div>
+        <div class="dash-progress-bar"><div class="dash-progress-fill" style="width:75%"></div></div>
+        <div class="dash-progress-label"><span>Applications active</span><span style="color:var(--rose)">75%</span></div>
+      </div>
+    </div>`;
+
+  // ── Calendar ──
+  let calHTML = '';
+  if (calRes && calRes.items && calRes.items.length > 0) {
+    const upcoming = calRes.items.slice(0, 5);
+    const events = upcoming.map(e => {
+      const d = new Date(e.start.dateTime || e.start.date);
+      const time = e.start.dateTime ? d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}) : d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+      return `<div class="dash-event"><div class="dash-event-dot"></div><div class="dash-event-time">${time}</div><div>${e.summary}</div></div>`;
+    }).join('');
+    calHTML = `<div class="dash-section"><div class="dash-section-title">Upcoming Events</div><div class="dash-event-list">${events}</div></div>`;
+  } else if (googleToken) {
+    calHTML = `<div class="dash-section"><div class="dash-section-title">Calendar</div><div style="font-size:0.72rem;color:var(--text-dim);">No upcoming events.</div></div>`;
+  } else {
+    calHTML = `<div class="dash-section"><div class="dash-section-title">Calendar</div><div style="font-size:0.72rem;color:var(--rose-dim);">Connect Google to see events.</div></div>`;
+  }
+
+  // ── Email ──
+  let emailHTML = '';
+  if (mailRes && mailRes.emails && mailRes.emails.length > 0) {
+    const emails = mailRes.emails.slice(0, 4).map(e =>
+      `<div class="dash-event"><div class="dash-event-dot" style="background:var(--lavender)"></div><div style="flex:1;min-width:0;"><div style="font-size:0.72rem;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.from.split('<')[0].trim()}</div><div style="font-size:0.62rem;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.subject}</div></div></div>`
+    ).join('');
+    emailHTML = `<div class="dash-section"><div class="dash-section-title">Unread Emails (${mailRes.emails.length})</div><div class="dash-event-list">${emails}</div></div>`;
+  } else if (googleToken) {
+    emailHTML = `<div class="dash-section"><div class="dash-section-title">Email</div><div style="font-size:0.72rem;color:var(--sage);">Inbox clear ✓</div></div>`;
+  } else {
+    emailHTML = `<div class="dash-section"><div class="dash-section-title">Email</div><div style="font-size:0.72rem;color:var(--rose-dim);">Connect Google to see emails.</div></div>`;
+  }
+
+  // ── GitHub ──
+  let ghHTML = '';
+  try {
+    const reposRes = await fetch('https://api.github.com/users/Kingcole006/repos?sort=updated&per_page=4');
+    const repos = reposRes.ok ? await reposRes.json() : [];
+    const repoItems = repos.map(r =>
+      `<div class="dash-event"><div class="dash-event-dot" style="background:var(--rose)"></div><div style="flex:1;min-width:0;"><div style="font-size:0.72rem;color:var(--text-mid);">${r.name}</div><div style="font-size:0.62rem;color:var(--text-dim);">Updated ${new Date(r.updated_at).toLocaleDateString()}</div></div></div>`
+    ).join('');
+    ghHTML = `<div class="dash-section"><div class="dash-section-title">GitHub Repos</div><div class="dash-event-list">${repoItems || '<div style="font-size:0.72rem;color:var(--text-dim);">No repos found.</div>'}</div></div>`;
+  } catch {
+    ghHTML = `<div class="dash-section"><div class="dash-section-title">GitHub</div><div style="font-size:0.72rem;color:var(--text-dim);">Unable to load.</div></div>`;
+  }
+
+  // ── Quick Actions ──
+  const quickHTML = `
+    <div class="dash-section">
+      <div class="dash-section-title">Quick Actions</div>
+      <div class="dash-quick-btns">
+        <button class="dash-quick-btn" onclick="closeDashboard();selectSlash('/focus')">🎯 Today's Focus</button>
+        <button class="dash-quick-btn" onclick="closeDashboard();selectSlash('/resume')">📄 Resume Bullets</button>
+        <button class="dash-quick-btn" onclick="closeDashboard();enterJobMode()">💼 Job Search Mode</button>
+        <button class="dash-quick-btn" onclick="closeDashboard();selectSlash('/test')">🧪 Write a Test</button>
+      </div>
+    </div>`;
+
+  body.innerHTML = careerHTML + calHTML + emailHTML + ghHTML + quickHTML;
+}
+
+// ─── Job Search Mode ───
+let jobSearchMode = false;
+
+function enterJobMode() {
+  jobSearchMode = true;
+  document.getElementById('jobModeBanner').classList.add('show');
+  document.getElementById('userInput').placeholder = 'Paste a job posting here…';
+  showToast('Job Search Mode active — paste a job posting');
+  document.getElementById('userInput').focus();
+}
+
+function exitJobMode() {
+  jobSearchMode = false;
+  document.getElementById('jobModeBanner').classList.remove('show');
+  document.getElementById('userInput').placeholder = 'Talk to Anisa…';
+  showToast('Job Search Mode off');
+}
+
+// ─── File Upload ───
+let attachedFileContent = null;
+let attachedFileName = null;
+
+async function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const maxSize = 500 * 1024; // 500KB
+  if (file.size > maxSize) {
+    showToast('File too large — max 500KB');
+    return;
+  }
+
+  showToast('Reading ' + file.name + '…');
+
+  try {
+    const text = await readFileAsText(file);
+    attachedFileContent = text;
+    attachedFileName = file.name;
+
+    // Show file attached indicator
+    const ta = document.getElementById('userInput');
+    if (!ta.value.trim()) {
+      ta.value = 'I\'ve attached ' + file.name + '. ';
+    } else {
+      ta.value += ' [File: ' + file.name + ']';
+    }
+    autoResize();
+    showToast('📎 ' + file.name + ' attached — tell me what to do with it');
+  } catch (e) {
+    showToast('Could not read file: ' + e.message);
+  }
+
+  // Reset input so same file can be re-attached
+  event.target.value = '';
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = () => reject(new Error('Read failed'));
+    reader.readAsText(file);
+  });
+}
+
+// ─── Patch SLASH_COMMANDS to add Phase 3 commands ───
+SLASH_COMMANDS['/jobs'] = () => enterJobMode();
+SLASH_COMMANDS['/dashboard'] = () => toggleDashboard();
+
+// ─── Patch sendMessage to inject file content and job mode context ───
+const _origSendMessageP3 = sendMessage;
+async function sendMessage() {
+  const ta = document.getElementById('userInput');
+  const input = ta.value.trim();
+
+  // If file attached, inject content into history before sending
+  if (attachedFileContent && input) {
+    const fileMsg = '[ATTACHED FILE: ' + attachedFileName + ']\n\n' + attachedFileContent.slice(0, 8000) + (attachedFileContent.length > 8000 ? '\n\n[File truncated at 8000 chars]' : '');
+    // Prepend file content as context to the message
+    ta.value = input + '\n\n' + fileMsg;
+    attachedFileContent = null;
+    attachedFileName = null;
+  }
+
+  await _origSendMessageP3();
+}
+
+// ─── Patch system prompt for job search mode ───
+const _origSystem = SYSTEM;
+Object.defineProperty(window, 'SYSTEM', {
+  get() {
+    if (jobSearchMode) {
+      return _origSystem + `\n\n## JOB SEARCH MODE ACTIVE
+The user is in Job Search Mode. When they paste a job posting, immediately respond with ALL THREE of the following without being asked:
+
+1. **Tailored Resume Bullets** — 5-7 bullet points rewritten to match the job's keywords and requirements, drawing from Cole's QA Automation background.
+2. **Cover Letter Draft** — a concise, confident 3-paragraph cover letter addressed to the hiring manager.
+3. **Skills Gap Analysis** — honestly list any skills in the posting Cole doesn't have yet, and suggest the fastest way to close each gap.
+
+Be direct and specific. Use the actual job title and company name if provided.`;
+    }
+    return _origSystem;
+  }
+});
+
+// Drag and drop on chat window
+const chatWin = document.getElementById('chatWindow');
+chatWin.addEventListener('dragover', e => { e.preventDefault(); chatWin.style.border = '1.5px dashed rgba(232,165,152,0.35)'; });
+chatWin.addEventListener('dragleave', () => { chatWin.style.border = ''; });
+chatWin.addEventListener('drop', async e => {
+  e.preventDefault();
+  chatWin.style.border = '';
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    const fakeEvent = { target: { files: [file], value: '' }, preventDefault: () => {} };
+    await handleFileUpload(fakeEvent);
+  }
+});
 
 // Initialize briefing check after Google callback check
 setTimeout(maybeShowBriefing, 500);
