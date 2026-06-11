@@ -1280,6 +1280,73 @@ async function sendMessage() {
   const input = ta.value.trim();
   if (!input) return;
 
+  // ─── Direct delete interceptor — bypasses AI for reliable event ID lookup ───
+  const deletePattern = /^(?:delete|remove|cancel)\s+(.+)$/i;
+  const deleteMatch = input.match(deletePattern);
+  if (deleteMatch && googleToken && !pendingAction) {
+    const searchTerm = deleteMatch[1].toLowerCase().trim();
+    ta.value = ''; ta.style.height = 'auto';
+    appendMsg('user', input);
+    history.push({ role: 'user', content: input });
+    sendBtn.disabled = true; ta.disabled = true;
+    typingRow.classList.add('active');
+
+    try {
+      const cal = await getCalendar();
+      if (cal && cal.items && cal.items.length > 0) {
+        // Find best matching event
+        const match = cal.items.find(e =>
+          e.summary && e.summary.toLowerCase().includes(searchTerm)
+        ) || cal.items.find(e =>
+          e.summary && searchTerm.split(' ').some(word => word.length > 2 && e.summary.toLowerCase().includes(word))
+        );
+
+        if (match) {
+          typingRow.classList.remove('active');
+          const startTime = match.start.dateTime || match.start.date;
+          const displayTime = new Date(startTime).toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+          const confirmMsg = 'Found it — "' + match.summary + '" on ' + displayTime + '. Should I remove it from your calendar?';
+          history.push({ role: 'assistant', content: confirmMsg });
+          appendMsg('anisa', confirmMsg);
+          speak(confirmMsg);
+          // Set pending action with REAL event ID
+          pendingAction = {
+            type: 'calendar',
+            action: 'delete',
+            eventId: match.id,
+            summary: match.summary,
+            start: startTime
+          };
+          renderActionCard(pendingAction);
+          sendBtn.disabled = false; ta.disabled = false; ta.focus();
+          return;
+        } else {
+          // No match found — show what's on the calendar
+          typingRow.classList.remove('active');
+          const eventList = cal.items.slice(0, 5).map(e => '• ' + e.summary).join('\n');
+          const notFoundMsg = 'I couldn\'t find "' + deleteMatch[1] + '" on your calendar. Here\'s what\'s coming up:\n\n' + eventList + '\n\nWhich one would you like me to remove?';
+          history.push({ role: 'assistant', content: notFoundMsg });
+          appendMsg('anisa', notFoundMsg);
+          sendBtn.disabled = false; ta.disabled = false; ta.focus();
+          return;
+        }
+      } else {
+        typingRow.classList.remove('active');
+        const emptyMsg = 'Your calendar looks clear — no upcoming events found.';
+        history.push({ role: 'assistant', content: emptyMsg });
+        appendMsg('anisa', emptyMsg);
+        sendBtn.disabled = false; ta.disabled = false; ta.focus();
+        return;
+      }
+    } catch (e) {
+      typingRow.classList.remove('active');
+      appendMsg('anisa', 'Something went wrong checking your calendar: ' + e.message);
+      sendBtn.disabled = false; ta.disabled = false; ta.focus();
+      return;
+    }
+  }
+  if (!input) return;
+
   // Handle pending action confirmations
   if (pendingAction) {
     const lower = input.toLowerCase().trim();
