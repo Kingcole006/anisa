@@ -1,94 +1,103 @@
 const https = require('https');
 
-function googlePost(path, token, body) {
+function httpsRequest(options, body) {
   return new Promise((resolve, reject) => {
-    const data = JSON.stringify(body);
-    const options = {
-      hostname: 'gmail.googleapis.com',
-      path,
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(data)
-      }
-    };
     const req = https.request(options, (res) => {
-      let d = '';
-      res.on('data', c => d += c);
-      res.on('end', () => resolve({ status: res.statusCode, body: d ? JSON.parse(d) : {} }));
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+        catch { resolve({ status: res.statusCode, body: data }); }
+      });
     });
     req.on('error', reject);
-    req.write(data);
+    if (body) req.write(body);
     req.end();
   });
 }
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-};
-
-function makeEmail(to, subject, body) {
-  const email = [
+function buildRawEmail(to, subject, body) {
+  const msg = [
     `To: ${to}`,
     `Subject: ${subject}`,
+    'Content-Type: text/plain; charset=UTF-8',
     'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset=utf-8',
     '',
     body
   ].join('\r\n');
-  return Buffer.from(email).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return Buffer.from(msg).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 exports.handler = async (event) => {
-  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json'
+  };
 
-  const token = event.headers.authorization?.replace('Bearer ', '');
-  if (!token) return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'No token' }) };
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+  if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
-  try {
-    const { action, to, subject, body: emailBody, draftId } = JSON.parse(event.body);
-
-    let result;
-
-    if (action === 'draft') {
-      // Save as draft
-      const raw = makeEmail(to, subject, emailBody);
-      result = await googlePost('/gmail/v1/users/me/drafts', token, {
-        message: { raw }
-      });
-      return {
-        statusCode: 200,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: true, draftId: result.body.id, message: 'Draft saved successfully' })
-      };
-
-    } else if (action === 'send') {
-      // Send email directly
-      const raw = makeEmail(to, subject, emailBody);
-      result = await googlePost('/gmail/v1/users/me/messages/send', token, { raw });
-      return {
-        statusCode: 200,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: true, messageId: result.body.id, message: 'Email sent successfully' })
-      };
-
-    } else if (action === 'send_draft') {
-      // Send existing draft
-      result = await googlePost(`/gmail/v1/users/me/drafts/send`, token, { id: draftId });
-      return {
-        statusCode: 200,
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: true, message: 'Draft sent successfully' })
-      };
-
-    } else {
-      return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Invalid action' }) };
-    }
-
-  } catch (err) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: err.message }) };
+  const authHeader = event.headers['authorization'] || event.headers['Authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { statusCode: 401, headers, body: JSON.stringify({ error: 'No token' }) };
   }
+  const accessToken = authHeader.replace('Bearer ', '').trim();
+
+  let payload;
+  try { payload = JSON.parse(event.body); }
+  catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON' }) }; }
+
+  const { action, to, subject, body: emailBody } = payload;
+
+  if (!to || !subject || !emailBody) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'to, subject, and body are required' }) };
+  }
+
+  const raw = buildRawEmail(to, subject, emailBody);
+
+  // ── DRAFT ──
+  if (action === 'draft') {
+    const draftPayload = JSON.stringify({ message: { raw } });
+    const result = await httpsRequest({
+      hostname: 'gmail.googleapis.com',
+      path: '/gmail/v1/users/me/drafts',
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(draftPayload)
+      }
+    }, draftPayload);
+
+    if (result.status === 200 || result.status === 201) {
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, draftId: result.body.id }) };
+    } else {
+      return { statusCode: result.status, headers, body: JSON.stringify({ error: result.body?.error?.message || 'Failed to create draft', details: result.body }) };
+    }
+  }
+
+  // ── SEND ──
+  if (action === 'send') {
+    const sendPayload = JSON.stringify({ raw });
+    const result = await httpsRequest({
+      hostname: 'gmail.googleapis.com',
+      path: '/gmail/v1/users/me/messages/send',
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(sendPayload)
+      }
+    }, sendPayload);
+
+    if (result.status === 200 || result.status === 201) {
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, messageId: result.body.id }) };
+    } else {
+      return { statusCode: result.status, headers, body: JSON.stringify({ error: result.body?.error?.message || 'Failed to send email', details: result.body }) };
+    }
+  }
+
+  return { statusCode: 400, headers, body: JSON.stringify({ error: `Unknown action: ${action}` }) };
 };
