@@ -918,14 +918,19 @@ Warm, calm, and wise — like a brilliant close friend who genuinely cares. Pres
 - Engaged to Mercedes. Has two Labradoodle puppies: CJ and Bruno.
 
 ## Google Write Actions — CRITICAL INSTRUCTIONS
-When Cole asks you to CREATE a calendar event or SEND/DRAFT an email, you MUST:
+When Cole asks you to CREATE or DELETE a calendar event, or SEND/DRAFT an email, you MUST:
 
 1. Show Cole all the details in plain text so he can review them.
 2. At the end of your message, append an ACTION BLOCK using this EXACT format (no variation):
 
-For calendar events:
+For creating calendar events:
 \`\`\`
-ACTION_BLOCK:{"type":"calendar","summary":"Event Title","start":"2026-06-12T14:00:00","end":"2026-06-12T15:00:00","description":"Optional notes","timeZone":"America/New_York"}
+ACTION_BLOCK:{"type":"calendar","action":"create","summary":"Event Title","start":"2026-06-12T14:00:00","end":"2026-06-12T15:00:00","description":"Optional notes","timeZone":"America/New_York"}
+\`\`\`
+
+For deleting calendar events — first fetch the calendar context to find the event ID, then use:
+\`\`\`
+ACTION_BLOCK:{"type":"calendar","action":"delete","eventId":"<event_id_from_calendar>","summary":"Event Title","start":"<event start time>"}
 \`\`\`
 
 For emails:
@@ -938,7 +943,8 @@ Rules:
 - Use ISO 8601 format for dates/times (YYYY-MM-DDTHH:mm:ss).
 - Default timezone is America/New_York unless Cole specifies otherwise.
 - If Cole has not given you enough info (missing date, missing recipient, etc.), ASK before generating the ACTION_BLOCK.
-- Never send or create without showing Cole the ACTION_BLOCK first — the UI will ask him to confirm.`;
+- For DELETE: you will receive calendar data in context — find the matching event and use its ID.
+- Never send, create, or delete without showing Cole the ACTION_BLOCK first — the UI will ask him to confirm.`;
 
 // ─── PWA Install ───
 window.addEventListener('beforeinstallprompt', e => {
@@ -1135,16 +1141,27 @@ function renderActionCard(action) {
   let details = '';
 
   if (action.type === 'calendar') {
-    label = '📅 Create Calendar Event';
-    const startDate = new Date(action.start);
-    const endDate = new Date(action.end);
-    const fmt = { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' };
-    details = `
-      <div class="action-detail"><strong>Title:</strong> ${action.summary}</div>
-      <div class="action-detail"><strong>Start:</strong> ${startDate.toLocaleString('en-US', fmt)}</div>
-      <div class="action-detail"><strong>End:</strong> ${endDate.toLocaleString('en-US', fmt)}</div>
-      ${action.description ? '<div class="action-detail"><strong>Notes:</strong> ' + action.description + '</div>' : ''}
-    `;
+    if (action.action === 'delete') {
+      label = '🗑️ Delete Calendar Event';
+      const startDate = action.start ? new Date(action.start) : null;
+      const fmt = { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+      details = `
+        <div class="action-detail"><strong>Event:</strong> ${action.summary}</div>
+        ${startDate ? '<div class="action-detail"><strong>Time:</strong> ' + startDate.toLocaleString('en-US', fmt) + '</div>' : ''}
+        <div class="action-detail" style="color:var(--rose-dim);font-size:0.7rem;margin-top:4px;">This will permanently remove the event from your calendar.</div>
+      `;
+    } else {
+      label = '📅 Create Calendar Event';
+      const startDate = new Date(action.start);
+      const endDate = new Date(action.end);
+      const fmt = { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+      details = `
+        <div class="action-detail"><strong>Title:</strong> ${action.summary}</div>
+        <div class="action-detail"><strong>Start:</strong> ${startDate.toLocaleString('en-US', fmt)}</div>
+        <div class="action-detail"><strong>End:</strong> ${endDate.toLocaleString('en-US', fmt)}</div>
+        ${action.description ? '<div class="action-detail"><strong>Notes:</strong> ' + action.description + '</div>' : ''}
+      `;
+    }
   } else if (action.type === 'email') {
     label = action.action === 'send' ? '📧 Send Email' : '📧 Save Draft';
     details = `
@@ -1187,12 +1204,21 @@ async function executeAction() {
 
   try {
     if (action.type === 'calendar') {
-      const result = await createCalendarEvent(action.summary, action.start, action.end, action.description || '', action.timeZone || 'America/New_York');
-      if (result.success) {
-        const d = new Date(action.start);
-        resultMsg = 'Done — "' + action.summary + '" is on your calendar for ' + d.toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.';
+      if (action.action === 'delete') {
+        const result = await deleteCalendarEvent(action.eventId);
+        if (result.success) {
+          resultMsg = 'Done — "' + action.summary + '" has been removed from your calendar.';
+        } else {
+          resultMsg = 'Something went wrong deleting the event: ' + (result.error || JSON.stringify(result));
+        }
       } else {
-        resultMsg = 'Something went wrong creating the event: ' + (result.error || JSON.stringify(result));
+        const result = await createCalendarEvent(action.summary, action.start, action.end, action.description || '', action.timeZone || 'America/New_York');
+        if (result.success) {
+          const d = new Date(action.start);
+          resultMsg = 'Done — "' + action.summary + '" is on your calendar for ' + d.toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.';
+        } else {
+          resultMsg = 'Something went wrong creating the event: ' + (result.error || JSON.stringify(result));
+        }
       }
     } else if (action.type === 'email') {
       const fn = action.action === 'send' ? sendEmail : draftEmail;
@@ -1418,13 +1444,16 @@ async function enrichWithGoogle(userMessage) {
   const msg = userMessage.toLowerCase();
   let googleData = '';
 
-  // Calendar enrichment
-  if (googleToken && (msg.includes('calendar') || msg.includes('schedule') || msg.includes('meeting') || msg.includes('event') || msg.includes('appointment') || msg.includes('today') || msg.includes('tomorrow') || msg.includes('week'))) {
+  // Calendar enrichment — also triggered by delete requests so event IDs are available
+  const deleteKeywords = ['remove', 'delete', 'cancel'];
+  const isDeleteRequest = deleteKeywords.some(k => msg.includes(k)) && (msg.includes('event') || msg.includes('meeting') || msg.includes('session') || msg.includes('appointment') || msg.includes('calendar'));
+
+  if (googleToken && (isDeleteRequest || msg.includes('calendar') || msg.includes('schedule') || msg.includes('meeting') || msg.includes('event') || msg.includes('appointment') || msg.includes('today') || msg.includes('tomorrow') || msg.includes('week'))) {
     const cal = await getCalendar();
     if (cal && cal.items && cal.items.length > 0) {
       const events = cal.items.map(e => {
         const start = e.start && (e.start.dateTime || e.start.date) || 'TBD';
-        return '- ' + e.summary + ' at ' + new Date(start).toLocaleString();
+        return '- ' + e.summary + ' at ' + new Date(start).toLocaleString() + ' [ID: ' + e.id + ']';
       }).join('\n');
       googleData += '\n\n[CALENDAR - Next 7 days]\n' + events;
     } else if (cal && cal.items) {
