@@ -730,6 +730,8 @@
         <div class="slash-item" onclick="selectSlash('/test')"><span class="slash-icon">🧪</span><span class="slash-cmd">/test</span><span class="slash-desc">Scaffold a Playwright test</span></div>
         <div class="slash-item" onclick="selectSlash('/focus')"><span class="slash-icon">🎯</span><span class="slash-cmd">/focus</span><span class="slash-desc">What to work on today</span></div>
         <div class="slash-item" onclick="selectSlash('/jobs')"><span class="slash-icon">💼</span><span class="slash-cmd">/jobs</span><span class="slash-desc">Job search mode</span></div>
+        <div class="slash-item" onclick="selectSlash('/drive')"><span class="slash-icon">📁</span><span class="slash-cmd">/drive</span><span class="slash-desc">Search Google Drive</span></div>
+        <div class="slash-item" onclick="selectSlash('/notify')"><span class="slash-icon">🔔</span><span class="slash-cmd">/notify</span><span class="slash-desc">Notification settings</span></div>
         <div class="slash-item" onclick="selectSlash('/dashboard')"><span class="slash-icon">📊</span><span class="slash-cmd">/dashboard</span><span class="slash-desc">Open dashboard</span></div>
       </div>
       <div class="input-shell">
@@ -2040,6 +2042,204 @@ SLASH_COMMANDS['/notify'] = () => toggleNotifSettings();
 // ─── Init notifications on load ───
 loadNotifSettings();
 checkNotifPermissionState();
+
+
+// ═══════════════════════════════════════════════
+// PHASE 5 — Google Drive Integration
+// ═══════════════════════════════════════════════
+
+// ─── Drive API calls ───
+async function driveSearch(query) {
+  if (!googleToken) return null;
+  try {
+    const res = await fetch(
+      '/.netlify/functions/google-drive?action=search&query=' + encodeURIComponent(query),
+      { headers: { 'Authorization': 'Bearer ' + googleToken } }
+    );
+    return await res.json();
+  } catch { return null; }
+}
+
+async function driveReadFile(fileId, mimeType) {
+  if (!googleToken) return null;
+  try {
+    const res = await fetch(
+      '/.netlify/functions/google-drive?action=read&fileId=' + encodeURIComponent(fileId) + '&mimeType=' + encodeURIComponent(mimeType || ''),
+      { headers: { 'Authorization': 'Bearer ' + googleToken } }
+    );
+    return await res.json();
+  } catch { return null; }
+}
+
+async function driveRecent() {
+  if (!googleToken) return null;
+  try {
+    const res = await fetch(
+      '/.netlify/functions/google-drive?action=recent',
+      { headers: { 'Authorization': 'Bearer ' + googleToken } }
+    );
+    return await res.json();
+  } catch { return null; }
+}
+
+// ─── Drive file picker UI ───
+function showDriveResults(files, title) {
+  if (!files || files.length === 0) {
+    appendMsg('anisa', 'No files found in Drive matching that search.');
+    return;
+  }
+
+  const ws = document.getElementById('welcomeScreen');
+  if (ws) ws.remove();
+
+  const cw = document.getElementById('chatWindow');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg anisa';
+  wrap.style.animation = 'msgIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards';
+
+  const av = document.createElement('div');
+  av.className = 'av';
+  av.style.cssText = 'background:radial-gradient(circle at 35% 32%,rgba(232,165,152,0.7),rgba(196,181,212,0.5) 60%,rgba(143,184,154,0.4));box-shadow:0 0 12px rgba(232,165,152,0.18);';
+  av.innerHTML = '<svg width="12" height="12" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="rgba(232,165,152,0.6)"/><circle cx="7" cy="7" r="3" fill="rgba(255,255,255,0.3)"/></svg>';
+
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+
+  const who = document.createElement('div');
+  who.className = 'msg-who';
+  who.style.color = 'var(--rose-dim)';
+  who.textContent = 'Anisa';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+
+  const fileTypeIcon = (mime) => {
+    if (mime.includes('document')) return '📄';
+    if (mime.includes('spreadsheet')) return '📊';
+    if (mime.includes('presentation')) return '📋';
+    if (mime.includes('pdf')) return '📕';
+    if (mime.includes('image')) return '🖼️';
+    if (mime.includes('folder')) return '📁';
+    return '📎';
+  };
+
+  const fileItems = files.map((f, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+      <span style="font-size:1rem;">${fileTypeIcon(f.mimeType)}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.76rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.name}</div>
+        <div style="font-size:0.62rem;color:var(--text-dim);">Modified ${new Date(f.modifiedTime).toLocaleDateString()}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        ${f.webViewLink ? `<a href="${f.webViewLink}" target="_blank" style="font-size:0.65rem;color:var(--sage);text-decoration:none;border:1px solid rgba(143,184,154,0.25);border-radius:5px;padding:3px 8px;">Open</a>` : ''}
+        ${(f.mimeType.includes('document') || f.mimeType.includes('text') || f.mimeType.includes('plain')) ?
+          `<button onclick="readDriveFile('${f.id}','${f.mimeType}','${f.name.replace(/'/g,'')}')" style="font-size:0.65rem;color:var(--rose);background:rgba(232,165,152,0.08);border:1px solid rgba(232,165,152,0.2);border-radius:5px;padding:3px 8px;cursor:pointer;font-family:'DM Sans',sans-serif;">Read</button>` : ''}
+      </div>
+    </div>`).join('');
+
+  bubble.innerHTML = `<div style="font-size:0.74rem;color:var(--text-mid);margin-bottom:8px;">${title || 'Found ' + files.length + ' file' + (files.length !== 1 ? 's' : '') + ' in Drive:'}</div>${fileItems}`;
+
+  body.appendChild(who);
+  body.appendChild(bubble);
+  wrap.appendChild(av);
+  wrap.appendChild(body);
+  cw.appendChild(wrap);
+  cw.scrollTop = cw.scrollHeight;
+}
+
+// ─── Read a Drive file and inject into chat ───
+async function readDriveFile(fileId, mimeType, fileName) {
+  showToast('Reading ' + fileName + '…');
+  const result = await driveReadFile(fileId, mimeType);
+  if (result && result.content) {
+    // Inject file content as a user message for Anisa to respond to
+    const ta = document.getElementById('userInput');
+    ta.value = 'I opened "' + fileName + '" from Drive. Here\'s the content:\n\n' + result.content + '\n\nPlease review this and give me your thoughts.';
+    autoResize();
+    showToast('"' + fileName + '" loaded — hit send to have Anisa review it');
+    ta.focus();
+  } else {
+    showToast('Could not read that file');
+  }
+}
+
+// ─── Auto-enrich with Drive context ───
+async function enrichWithDrive(userMessage) {
+  if (!googleToken) return '';
+  const msg = userMessage.toLowerCase();
+
+  const driveKeywords = ['resume', 'cover letter', 'document', 'my notes', 'my doc', 'drive', 'google doc', 'find my', 'look up my', 'pull up my'];
+  const shouldSearch = driveKeywords.some(k => msg.includes(k));
+  if (!shouldSearch) return '';
+
+  // Extract search term — use the most specific noun phrase
+  let searchTerm = '';
+  if (msg.includes('resume')) searchTerm = 'resume';
+  else if (msg.includes('cover letter')) searchTerm = 'cover letter';
+  else if (msg.includes('notes')) searchTerm = 'notes';
+  else {
+    // Generic — grab words after "my" or "find"
+    const match = msg.match(/(?:my|find|look up|pull up)\s+([a-z\s]+?)(?:\s+in|\s+from|$)/);
+    if (match) searchTerm = match[1].trim();
+  }
+
+  if (!searchTerm) return '';
+
+  try {
+    const result = await driveSearch(searchTerm);
+    if (result && result.files && result.files.length > 0) {
+      const fileList = result.files.slice(0, 3).map(f =>
+        '- ' + f.name + ' (modified ' + new Date(f.modifiedTime).toLocaleDateString() + ', ID: ' + f.id + ')'
+      ).join('\n');
+      return '\n\n[GOOGLE DRIVE - Files matching "' + searchTerm + '"]\n' + fileList + '\nUse the Read button in the UI to load file contents.';
+    }
+  } catch {}
+  return '';
+}
+
+// ─── /drive slash command handler ───
+SLASH_COMMANDS['/drive'] = async () => {
+  if (!googleToken) {
+    appendMsg('anisa', 'Connect Google first using the 🔗 button, then try /drive again.');
+    return;
+  }
+  const query = prompt('Search Google Drive for:');
+  if (!query) return;
+  showToast('Searching Drive for "' + query + '"…');
+  const result = await driveSearch(query);
+  showDriveResults(result && result.files, 'Results for "' + query + '":');
+};
+
+// ─── Patch enrichWithGoogle to also check Drive ───
+const _origEnrichWithGoogleP5 = enrichWithGoogle;
+async function enrichWithGoogle(userMessage) {
+  const base = await _origEnrichWithGoogleP5(userMessage);
+  const driveData = await enrichWithDrive(userMessage);
+  return base + driveData;
+}
+
+// ─── Add Drive section to dashboard ───
+const _origLoadDashboard = loadDashboard;
+async function loadDashboard() {
+  await _origLoadDashboard();
+  // Append Drive section to dash body after original loads
+  if (googleToken) {
+    try {
+      const result = await driveRecent();
+      if (result && result.files && result.files.length > 0) {
+        const body = document.getElementById('dashBody');
+        const section = document.createElement('div');
+        section.className = 'dash-section';
+        const fileTypeIcon = (mime) => mime.includes('document') ? '📄' : mime.includes('spreadsheet') ? '📊' : mime.includes('presentation') ? '📋' : '📎';
+        const items = result.files.slice(0, 4).map(f =>
+          `<div class="dash-event"><div class="dash-event-dot" style="background:var(--gold)"></div><div style="flex:1;min-width:0;"><div style="font-size:0.72rem;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${fileTypeIcon(f.mimeType)} ${f.name}</div><div style="font-size:0.62rem;color:var(--text-dim);">Modified ${new Date(f.modifiedTime).toLocaleDateString()}</div></div></div>`
+        ).join('');
+        section.innerHTML = `<div class="dash-section-title">Recent Drive Files</div><div class="dash-event-list">${items}</div>`;
+        body.appendChild(section);
+      }
+    } catch {}
+  }
+}
 
 // Initialize briefing check after Google callback check
 setTimeout(maybeShowBriefing, 500);
