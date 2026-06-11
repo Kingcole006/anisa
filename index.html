@@ -1420,6 +1420,16 @@ async function createCalendarEvent(summary, start, end, description, timeZone) {
   return await res.json();
 }
 
+async function deleteCalendarEvent(eventId) {
+  if (!googleToken) return { error: 'Not connected' };
+  const res = await fetch('/.netlify/functions/google-calendar-write', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + googleToken },
+    body: JSON.stringify({ action: 'delete', eventId })
+  });
+  return await res.json();
+}
+
 async function draftEmail(to, subject, body) {
   if (!googleToken) return { error: 'Not connected' };
   const res = await fetch('/.netlify/functions/google-gmail-send', {
