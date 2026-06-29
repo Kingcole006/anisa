@@ -644,6 +644,40 @@
   }
   .lore-mode-exit:hover { color: var(--rose); }
 
+  /* ─── QA Mode ─── */
+  .qa-mode-banner {
+    display: none;
+    background: rgba(143,184,154,0.06);
+    border: 1px solid rgba(143,184,154,0.2);
+    border-radius: 10px; padding: 10px 14px;
+    margin-bottom: 10px; flex-shrink: 0;
+    font-size: 0.72rem;
+    align-items: center; gap: 8px;
+    justify-content: space-between;
+  }
+  .qa-mode-banner.show { display: flex; }
+  .qa-mode-label { display: flex; align-items: center; gap: 6px; color: var(--sage); }
+  .qa-mode-exit {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 0.75rem; padding: 0; transition: color 0.2s;
+  }
+  .qa-mode-exit:hover { color: var(--rose); }
+
+  .qa-quick-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 6px; margin-top: 10px;
+  }
+  .qa-quick-btn {
+    background: rgba(143,184,154,0.06); border: 1px solid rgba(143,184,154,0.15);
+    border-radius: 8px; padding: 9px 12px;
+    color: var(--text-mid); font-family: 'DM Sans', sans-serif;
+    font-size: 0.68rem; cursor: pointer; transition: all 0.2s; text-align: left;
+  }
+  .qa-quick-btn:hover { background: rgba(143,184,154,0.12); border-color: rgba(143,184,154,0.3); color: var(--sage); }
+  .qa-quick-btn .qb-icon { font-size: 0.85rem; margin-bottom: 3px; display: block; }
+  .qa-quick-btn .qb-label { font-weight: 500; color: var(--text); font-size: 0.7rem; }
+  .qa-quick-btn .qb-desc { color: var(--text-dim); font-size: 0.62rem; margin-top: 1px; }
+
   .install-banner {
     display:none;position:fixed;bottom:0;left:0;right:0;
     background:linear-gradient(135deg,rgba(23,20,31,0.97),rgba(15,13,19,0.97));
@@ -763,6 +797,7 @@
       <button class="icon-btn" id="searchToggle" title="Web search" onclick="toggleSearch()">🔍</button>
       <button class="icon-btn" id="voiceToggle" title="Voice responses" onclick="toggleVoice()">🔈</button>
       <button class="icon-btn" id="voiceModeBtn" title="Voice Mode" onclick="enterVoiceMode()">🎙️</button>
+      <button class="icon-btn" id="qaModeBtn" title="QA Mode" onclick="enterQAMode()">🧪</button>
       <button class="icon-btn" id="loreModeBtn" title="Lore Mode — Vandermarch" onclick="enterLoreMode()">📖</button>
       <button class="icon-btn" id="googleBtn" title="Connect Google" onclick="connectGoogle()">🔗</button>
       <button class="icon-btn" id="notifBtn" title="Notification settings" onclick="toggleNotifSettings()">🔔</button>
@@ -775,6 +810,12 @@
   <div class="notif-permission-banner" id="notifPermBannerInner">
     <span>🔔 Enable notifications so Anisa can remind you about meetings and goals.</span>
     <button class="notif-allow-btn" onclick="requestNotifPermission()">Enable</button>
+  </div>
+
+  <!-- QA Mode Banner -->
+  <div class="qa-mode-banner" id="qaModeBanner">
+    <div class="qa-mode-label">🧪 <strong style="color:var(--sage)">QA Mode</strong> — I'm your senior QA Automation Engineer. Tell me what to test, review, or build.</div>
+    <button class="qa-mode-exit" onclick="exitQAMode()" title="Exit QA Mode">✕</button>
   </div>
 
   <!-- Lore Mode Banner -->
@@ -851,6 +892,7 @@
         <div class="slash-item" onclick="selectSlash('/test')"><span class="slash-icon">🧪</span><span class="slash-cmd">/test</span><span class="slash-desc">Scaffold a Playwright test</span></div>
         <div class="slash-item" onclick="selectSlash('/focus')"><span class="slash-icon">🎯</span><span class="slash-cmd">/focus</span><span class="slash-desc">What to work on today</span></div>
         <div class="slash-item" onclick="selectSlash('/jobs')"><span class="slash-icon">💼</span><span class="slash-cmd">/jobs</span><span class="slash-desc">Job search mode</span></div>
+        <div class="slash-item" onclick="selectSlash('/qa')"><span class="slash-icon">🧪</span><span class="slash-cmd">/qa</span><span class="slash-desc">QA Automation Mode</span></div>
         <div class="slash-item" onclick="selectSlash('/lore')"><span class="slash-icon">📖</span><span class="slash-cmd">/lore</span><span class="slash-desc">Enter Vandermarch</span></div>
         <div class="slash-item" onclick="selectSlash('/voice')"><span class="slash-icon">🎙️</span><span class="slash-cmd">/voice</span><span class="slash-desc">Hands-free voice mode</span></div>
         <div class="slash-item" onclick="selectSlash('/drive')"><span class="slash-icon">📁</span><span class="slash-cmd">/drive</span><span class="slash-desc">Search Google Drive</span></div>
@@ -1996,6 +2038,7 @@ const _baseSystem = SYSTEM;
 Object.defineProperty(window, 'SYSTEM', {
   get() {
     if (loreModeActive) return VANDERMARCH_SYSTEM;
+    if (qaModeActive) return QA_SYSTEM;
     if (jobSearchMode) {
       return _baseSystem + `\n\n## JOB SEARCH MODE ACTIVE
 The user is in Job Search Mode. When they paste a job posting, immediately respond with ALL THREE of the following without being asked:
@@ -2025,6 +2068,142 @@ chatWin.addEventListener('drop', async e => {
   }
 });
 
+
+
+// ═══════════════════════════════════════════════
+// QA MODE — Senior QA Automation Engineer
+// ═══════════════════════════════════════════════
+
+let qaModeActive = false;
+
+const QA_SYSTEM = `You are Anisa in QA Mode — acting as a senior QA Automation Engineer with 8+ years of experience. You think in test coverage, edge cases, regression risk, and CI/CD pipelines.
+
+## Your Stack (Cole's exact stack)
+- **Test Framework:** Playwright with TypeScript
+- **Architecture:** Page Object Model (POM)
+- **CI/CD:** GitHub Actions
+- **API Testing:** Playwright's built-in request context
+- **Data:** JSON fixtures, data-driven testing
+- **Reporting:** Playwright HTML reporter
+- **Package Manager:** npm / Node.js
+- **Repo:** github.com/Kingcole006/qa-learning-portfolio
+
+## What you do in QA Mode
+- Generate complete, copy-paste ready Playwright TypeScript test files
+- Build full Page Object classes with typed locators and action methods
+- Write data-driven tests with fixture files
+- Create GitHub Actions CI/CD workflows (.yml files)
+- Review existing test code and suggest improvements
+- Identify test coverage gaps and edge cases
+- Write API tests using Playwright's request context
+- Scaffold full test suites for any feature or page described
+- Explain QA concepts clearly when asked
+
+## Code standards you always follow
+- TypeScript strict mode — always typed, never 'any' unless unavoidable
+- POM pattern — never put selectors directly in test files
+- Descriptive test names — "should display error when password is too short" not "test login"
+- AAA pattern — Arrange, Act, Assert, clearly separated
+- Meaningful assertions — never just check that something exists; check the actual value
+- Test isolation — each test independent, no shared state
+- Use Playwright best practices: getByRole, getByLabel, getByText over CSS selectors where possible
+- Always include beforeEach/afterEach hooks when relevant
+- Group related tests with describe blocks
+
+## Response style in QA Mode
+- Lead with the code — don't explain what you're about to do, just do it
+- Always use complete, runnable code blocks — no placeholders like "add your URL here"
+- After the code, briefly note what it covers and what edge cases Cole might want to add
+- If asked to review code, be direct about issues — no sugarcoating
+- If asked for coverage gaps, be thorough — think like a QA lead preparing for a release
+
+## When Cole describes a page or feature
+Immediately scaffold: the Page Object class first, then the test file that uses it. Always ask if he wants the GitHub Actions workflow too.`;
+
+function enterQAMode() {
+  qaModeActive = true;
+  loreModeActive = false; // Exit lore mode if active
+  document.getElementById('qaModeBanner').classList.add('show');
+  document.getElementById('qaModeBtn').classList.add('active');
+  document.getElementById('loreModeBanner').classList.remove('show');
+  document.getElementById('loreModeBtn').classList.remove('active');
+  document.querySelector('.bg-layer').style.filter = '';
+  document.getElementById('userInput').placeholder = 'Describe what to test, paste code to review, or ask a QA question…';
+  showToast('QA Mode active — let\'s build some tests');
+
+  // Show QA quick action cards
+  setTimeout(() => {
+    const ws = document.getElementById('welcomeScreen');
+    if (ws) ws.remove();
+    const cw = document.getElementById('chatWindow');
+    const wrap = document.createElement('div');
+    wrap.className = 'msg anisa';
+    wrap.style.animation = 'msgIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards';
+    const av = document.createElement('div');
+    av.className = 'av';
+    av.style.cssText = 'background:radial-gradient(circle at 35% 32%,rgba(143,184,154,0.7),rgba(196,181,212,0.5) 60%,rgba(232,165,152,0.4));box-shadow:0 0 12px rgba(143,184,154,0.18);';
+    av.innerHTML = '<svg width="12" height="12" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="rgba(143,184,154,0.6)"/></svg>';
+    const body = document.createElement('div');
+    body.className = 'msg-body';
+    const who = document.createElement('div');
+    who.className = 'msg-who';
+    who.style.color = 'var(--sage)';
+    who.textContent = 'Anisa — QA Mode';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.style.borderColor = 'rgba(143,184,154,0.2)';
+    bubble.innerHTML = `
+      <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:12px;">QA Mode active. What are we testing today?</div>
+      <div class="qa-quick-grid">
+        <button class="qa-quick-btn" onclick="quickSend('Write a Playwright TypeScript test for a login page with email, password, and submit button. Use Page Object Model.')">
+          <span class="qb-icon">🔐</span>
+          <div class="qb-label">Login Page Test</div>
+          <div class="qb-desc">POM + full test suite</div>
+        </button>
+        <button class="qa-quick-btn" onclick="quickSend('Review my Playwright test code and tell me what to improve. I will paste it next.')">
+          <span class="qb-icon">🔍</span>
+          <div class="qb-label">Review My Code</div>
+          <div class="qb-desc">Senior QA feedback</div>
+        </button>
+        <button class="qa-quick-btn" onclick="quickSend('Write a GitHub Actions workflow that runs my Playwright tests on push and pull request, saves HTML reports as artifacts, and runs on Ubuntu.')">
+          <span class="qb-icon">⚙️</span>
+          <div class="qb-label">CI/CD Workflow</div>
+          <div class="qb-desc">GitHub Actions .yml</div>
+        </button>
+        <button class="qa-quick-btn" onclick="quickSend('Write a data-driven Playwright TypeScript test using a JSON fixture file with multiple test cases.')">
+          <span class="qb-icon">📊</span>
+          <div class="qb-label">Data-Driven Test</div>
+          <div class="qb-desc">JSON fixtures</div>
+        </button>
+        <button class="qa-quick-btn" onclick="quickSend('Write a Playwright API test that sends a GET request, validates the status code, and checks the response body structure.')">
+          <span class="qb-icon">🌐</span>
+          <div class="qb-label">API Test</div>
+          <div class="qb-desc">REST endpoint validation</div>
+        </button>
+        <button class="qa-quick-btn" onclick="quickSend('I want to describe a page or feature and have you scaffold the full Page Object class and test file for it.')">
+          <span class="qb-icon">🏗️</span>
+          <div class="qb-label">Scaffold from Scratch</div>
+          <div class="qb-desc">Describe any feature</div>
+        </button>
+      </div>`;
+    body.appendChild(who);
+    body.appendChild(bubble);
+    wrap.appendChild(av);
+    wrap.appendChild(body);
+    cw.appendChild(wrap);
+    cw.scrollTop = cw.scrollHeight;
+  }, 300);
+}
+
+function exitQAMode() {
+  qaModeActive = false;
+  document.getElementById('qaModeBanner').classList.remove('show');
+  document.getElementById('qaModeBtn').classList.remove('active');
+  document.getElementById('userInput').placeholder = 'Talk to Anisa…';
+  showToast('Exited QA Mode');
+}
+
+SLASH_COMMANDS['/qa'] = () => enterQAMode();
 
 // ═══════════════════════════════════════════════
 // PHASE 4 — Notifications + Reminders
